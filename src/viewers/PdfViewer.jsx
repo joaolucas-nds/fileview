@@ -25,19 +25,20 @@ export default function PdfViewer() {
   const canvasRef = useRef(null)
   const renderTaskRef = useRef(null)
 
-  // Load PDF when file changes
+  // Carrega PDF quando o arquivo muda
   useEffect(() => {
     if (!activeFile || activeFile.ext !== 'pdf') return
     setLoading(true)
     setError(null)
     setPage(1)
+    setPdf(null)
 
     getPdfjs().then(async (lib) => {
       try {
-        const data = activeFile.content instanceof ArrayBuffer
-          ? new Uint8Array(activeFile.content)
-          : activeFile.content
-        const loadingTask = lib.getDocument({ data })
+        // activeFile.content é uma Blob URL (string) — ver AppContext/FIX-001.
+        // Passamos a URL diretamente; PDF.js faz o fetch internamente, sem
+        // precisar de ArrayBuffer no main thread (eliminando o risco de detachment).
+        const loadingTask = lib.getDocument(activeFile.content)
         const pdfDoc = await loadingTask.promise
         setPdf(pdfDoc)
         setTotalPages(pdfDoc.numPages)
@@ -49,12 +50,12 @@ export default function PdfViewer() {
     })
   }, [activeFile?.id])
 
-  // Render current page
+  // Renderiza a página atual no canvas
   useEffect(() => {
     if (!pdf || !canvasRef.current) return
 
     const renderPage = async () => {
-      // Cancel any ongoing render
+      // Cancela render em andamento antes de iniciar novo
       if (renderTaskRef.current) {
         try { renderTaskRef.current.cancel() } catch {}
       }
@@ -92,10 +93,7 @@ export default function PdfViewer() {
 
   if (error) return (
     <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
-      <div style={{
-        padding: '16px 20px', background: 'var(--red-light)', borderRadius: 'var(--radius-md)',
-        color: 'var(--red)', fontSize: '13px', fontFamily: 'var(--font-mono)',
-      }}>
+      <div style={{ padding: '16px 20px', background: 'var(--red-light)', borderRadius: 'var(--radius-md)', color: 'var(--red)', fontSize: '13px', fontFamily: 'var(--font-mono)' }}>
         ⚠ Erro ao abrir PDF: {error}
       </div>
     </div>
@@ -103,15 +101,13 @@ export default function PdfViewer() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Controls */}
+      {/* Controles de navegação e zoom */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
         padding: '8px 16px', borderBottom: '1px solid var(--border)',
         background: 'var(--surface)', flexShrink: 0,
       }}>
-        <button onClick={() => goTo(page - 1)} disabled={page <= 1} style={navBtn(page <= 1)}>
-          ←
-        </button>
+        <button onClick={() => goTo(page - 1)} disabled={page <= 1} style={navBtn(page <= 1)}>←</button>
         <span style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
           Página
           <input
@@ -125,41 +121,22 @@ export default function PdfViewer() {
           />
           de {totalPages}
         </span>
-        <button onClick={() => goTo(page + 1)} disabled={page >= totalPages} style={navBtn(page >= totalPages)}>
-          →
-        </button>
-
+        <button onClick={() => goTo(page + 1)} disabled={page >= totalPages} style={navBtn(page >= totalPages)}>→</button>
         <div style={{ width: '1px', height: '20px', background: 'var(--border)' }} />
-
         <button onClick={() => setScale(s => Math.max(0.5, s - 0.2))} style={navBtn(scale <= 0.5)}>−</button>
         <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', minWidth: '40px', textAlign: 'center' }}>
           {Math.round(scale * 100)}%
         </span>
         <button onClick={() => setScale(s => Math.min(3, s + 0.2))} style={navBtn(scale >= 3)}>+</button>
-        <button
-          onClick={() => setScale(1.2)}
-          style={{ ...navBtn(false), fontSize: '11px', padding: '4px 8px' }}
-        >Reset</button>
-        <button
-          onClick={() => setScale(1.0)}
-          style={{ ...navBtn(false), fontSize: '11px', padding: '4px 8px' }}
-        >Ajustar</button>
+        <button onClick={() => setScale(1.2)} style={{ ...navBtn(false), fontSize: '11px', padding: '4px 8px' }}>Reset</button>
+        <button onClick={() => setScale(1.0)} style={{ ...navBtn(false), fontSize: '11px', padding: '4px 8px' }}>Ajustar</button>
       </div>
 
-      {/* Canvas area */}
-      <div style={{
-        flex: 1, overflowY: 'auto', overflowX: 'auto',
-        background: '#3A3A38', display: 'flex', justifyContent: 'center',
-        padding: '24px',
-      }}>
+      {/* Canvas do PDF */}
+      <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto', background: '#3A3A38', display: 'flex', justifyContent: 'center', padding: '24px' }}>
         <canvas
           ref={canvasRef}
-          style={{
-            boxShadow: '0 4px 32px rgba(0,0,0,0.5)',
-            borderRadius: '2px',
-            display: 'block',
-            maxWidth: '100%',
-          }}
+          style={{ boxShadow: '0 4px 32px rgba(0,0,0,0.5)', borderRadius: '2px', display: 'block', maxWidth: '100%' }}
         />
       </div>
     </div>

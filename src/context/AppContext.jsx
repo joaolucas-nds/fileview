@@ -9,7 +9,7 @@ export function AppProvider({ children }) {
 
   const openFile = useCallback(async (file) => {
     const ext = file.name.split('.').pop().toLowerCase()
-    // Check if file already open by name
+    // Evita duplicata: se já aberto pelo mesmo nome, só foca
     setFiles(prev => {
       const existing = prev.find(f => f.name === file.name)
       if (existing) { setActiveId(existing.id); return prev }
@@ -18,7 +18,13 @@ export function AppProvider({ children }) {
 
     let content
     if (ext === 'pdf') {
-      content = await file.arrayBuffer()
+      // ARMADILHA (FIX-001): PDF.js v4 faz postMessage com transfer do ArrayBuffer
+      // para o worker, o que o DETACHA do main thread permanentemente.
+      // Na remontagem do componente, o buffer estaria morto → erro "already detached".
+      // Solução: converter para Blob URL (string) — imune a transfer/detachment.
+      const buf = await file.arrayBuffer()
+      const blob = new Blob([buf], { type: 'application/pdf' })
+      content = URL.createObjectURL(blob)
     } else {
       content = await file.text()
     }
@@ -40,10 +46,17 @@ export function AppProvider({ children }) {
 
   const closeFile = useCallback((id) => {
     setFiles(prev => {
+      const fileToClose = prev.find(f => f.id === id)
+      // Revogar Blob URL do PDF para não vazar memória
+      if (fileToClose?.ext === 'pdf' && typeof fileToClose.content === 'string') {
+        URL.revokeObjectURL(fileToClose.content)
+      }
       const next = prev.filter(f => f.id !== id)
       setActiveId(cur => {
         if (cur !== id) return cur
-        return next.length ? next[Math.max(0, next.findIndex(f => f.id === id) - 1)]?.id || next[0].id : null
+        return next.length
+          ? next[Math.max(0, next.findIndex(f => f.id === id) - 1)]?.id || next[0].id
+          : null
       })
       return next
     })
