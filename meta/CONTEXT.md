@@ -18,40 +18,37 @@ FileView é um visualizador e editor de arquivos que roda 100% no browser (sem s
 - **Syntax highlight:** `lowlight` (dentro dos blocos de código do Tiptap)
 - **Ícones:** `lucide-react` ^0.462.0 (fixado — não atualizar sem testar ícones)
 - **Fontes:** Outfit (UI) + Space Mono (mono/código) via Google Fonts
-- **Deploy:** `npm run dev` local · `npm run build` → `dist/` · GitHub Pages via GitHub Actions
+- **Deploy:** `npm run dev` local; `npm run build` gera estático em `dist/`; GitHub Pages via `dist/`
 
 ## Estrutura do Projeto
 ```
 fileview/
 ├── package.json
-├── vite.config.js              # base: './' obrigatório para GitHub Pages
+├── vite.config.js          # base: './' obrigatório para GitHub Pages
 ├── index.html
-├── .github/
-│   └── workflows/
-│       └── deploy.yml          # auto-build e deploy a cada push na main
-├── meta/                       # documentação de contexto (subir no Projeto do Claude)
-│   ├── CEREBRO.md              # regras de comportamento do assistente
-│   ├── CONTEXT.md              # este arquivo — visão, stack, armadilhas
-│   ├── STATUS.md               # estado atual (rolante)
-│   ├── DECISIONS.md            # decisões e bugs graves documentados
-│   ├── CHANGELOG.md            # histórico de versões entregues
-│   ├── IDEAS.md                # segundo cérebro de ideias
-│   ├── ROADMAP.md              # plano de evolução por fases
-│   ├── GLOSSARY.md             # termos do projeto
-│   ├── HISTORICO.md            # conhecimento consolidado de fases antigas
-│   └── LOG-TEMPLATE.md         # molde do log de sessão (referência fixa)
-├── logs/                       # logs de sessão (Git, não no Projeto)
+├── meta/                   # documentação de contexto (lida pelo assistente)
+│   ├── CEREBRO.md          # comportamento e regras do assistente
+│   ├── CONTEXT.md          # este arquivo
+│   ├── STATUS.md           # estado atual (rolante)
+│   ├── DECISIONS.md        # decisões e bugs graves
+│   ├── CHANGELOG.md        # histórico de versões
+│   ├── IDEAS.md            # segundo cérebro
+│   ├── ROADMAP.md          # plano de evolução
+│   ├── GLOSSARY.md         # termos do projeto
+│   ├── HISTORICO.md        # conhecimento consolidado
+│   └── LOG-TEMPLATE.md     # molde do log de sessão
+├── logs/                   # logs de sessão (lidos sob demanda)
 │   └── AAAA-MM-DD.md
 └── src/
     ├── main.jsx
-    ├── App.jsx                 # layout: sidebar + tab bar + mode switcher + ViewerRouter
-    ├── App.css                 # design tokens (CSS vars) + .md-output + .tiptap-editor
+    ├── App.jsx             # layout: sidebar + tab bar + mode switcher + ViewerRouter
+    ├── App.css             # design tokens (CSS vars) + .md-output + .tiptap-editor
     ├── context/
-    │   └── AppContext.jsx      # PEÇA CRÍTICA — estado global (ver seção abaixo)
+    │   └── AppContext.jsx  # PEÇA CRÍTICA — estado global
     ├── components/
     │   ├── Sidebar.jsx
     │   ├── DropZone.jsx
-    │   └── ViewerRouter.jsx    # React.lazy → viewer/editor por ext + mode
+    │   └── ViewerRouter.jsx
     ├── viewers/
     │   ├── MarkdownViewer.jsx
     │   ├── JsonViewer.jsx
@@ -68,15 +65,14 @@ AppContext é a **única fonte de verdade** — elimina prop drilling total.
 **Estado:**
 - `files` — array de `{ id, name, ext, content, originalContent, isDirty, size }`. Para PDFs, `content` é uma **Blob URL** (string), jamais ArrayBuffer.
 - `activeId` — string do arquivo em foco.
-- `modes` — `Record<id, 'preview'|'edit'|'source'|'view'>` — modo por arquivo, independente.
+- `modes` — `Record<id, 'preview'|'edit'|'source'|'view'>` — modo por arquivo.
 
-**Funções expostas via Context:**
-- `openFile(File)` — lê o arquivo, cria objeto, adiciona ao array, seta como ativo. PDFs → Blob URL. Textos → `file.text()`.
-- `closeFile(id)` — remove; **revoga Blob URL** se for PDF; atualiza `activeId` para vizinho.
+**Funções expostas:**
+- `openFile(File)` — PDFs → Blob URL; Textos → `file.text()`.
+- `closeFile(id)` — revoga Blob URL se for PDF; atualiza `activeId`.
 - `updateContent(id, str)` — atualiza `content` e recalcula `isDirty`.
 - `saveFile(id)` — dispara download via `<a download>`.
-- `setMode(id, mode)` — troca modo de visualização do arquivo.
-- `setActiveId(id)` — foca outro arquivo (Sidebar e tabs).
+- `setMode(id, mode)` / `setActiveId(id)` — navegação.
 
 **ViewerRouter** lê `activeFile.ext` + `activeMode` e monta o componente via `React.lazy + Suspense`.
 
@@ -84,21 +80,21 @@ AppContext é a **única fonte de verdade** — elimina prop drilling total.
 - Nomes de arquivos, funções e variáveis em **inglês**; comentários em **PT-BR**
 - Commits em PT-BR, imperativo curto
 - Estilo: zero CSS modules — CSS vars globais (`App.css`) ou `style={{}}` inline
-- TypeScript: não usado; migração futura considerada mas não prioridade
+- TypeScript: não usado; migração futura possível mas não prioridade
 
 ## Armadilhas Conhecidas
 
-1. **PDF — ArrayBuffer detachado pelo worker** — PDF.js v4 faz `postMessage` com `transfer` do ArrayBuffer para o worker thread, o que o **detacha** do main thread permanentemente. Na remontagem do componente, o buffer está morto → erro `"already detached"`. **Solução:** armazenar PDF como `URL.createObjectURL(blob)` em `AppContext.openFile`; passar a string URL para `lib.getDocument(url)` no PdfViewer; revogar com `URL.revokeObjectURL` no `closeFile`. Ver FIX-001.
+1. **PDF — ArrayBuffer detachado pelo worker** — PDF.js v4 faz `postMessage` com `transfer` do ArrayBuffer para o worker thread, o que o **detacha** do main thread permanentemente. Na remontagem ou troca de arquivo, o buffer está morto → erro `"already detached"`. **Solução:** armazenar PDF como `URL.createObjectURL(blob)` em `AppContext.openFile`; passar a string URL para `lib.getDocument(url)` no PdfViewer; revogar com `URL.revokeObjectURL` no `closeFile`. Ver FIX-001.
 
 2. **CSV: editar enquanto filtrado** — O `filtered` é array derivado; reconstruir o CSV a partir dele descarta linhas fora do filtro. A versão corrigida injeta `__dataIdx` (índice no `data` original) em cada linha do `filtered`; `commitEdit` opera sobre `data` via esse índice. Ver FIX-002.
 
 3. **Tiptap: StarterKit × CodeBlockLowlight** — `StarterKit` inclui `codeBlock` padrão que conflita silenciosamente com `CodeBlockLowlight`. É **obrigatório** `StarterKit.configure({ codeBlock: false })`. Omitir quebra o editor sem erro no console.
 
-4. **lucide-react versão** — fixado em `^0.462.0`. Versões mais novas renomeiam ícones; não atualizar sem testar.
+4. **lucide-react versão** — fixado em `^0.462.0`. Versões mais novas renomeiam ícones; não atualizar sem testar cada ícone usado.
 
-5. **onBlur vs cancelar edição** — `onBlur` do input sempre commita antes de qualquer `onClick`. Para botão de cancelar, usar `onMouseDown + preventDefault` — dispara antes do `onBlur`.
+5. **onBlur vs cancelar edição (CSV/JSON)** — `onBlur` do input sempre commita antes de qualquer `onClick`. Para botão de cancelar, usar `onMouseDown + preventDefault` — dispara antes do `onBlur`.
 
-6. **GitHub Pages — página em branco** — Sem `base: './'` no `vite.config.js`, o Vite gera URLs absolutas para assets (`/assets/index.js`). O Pages serve o app em `/nome-do-repo/` e não encontra os arquivos → branco sem erro visível. Além disso, servir o código-fonte diretamente (sem build) também resulta em branco. **Solução completa:** `base: './'` no vite.config.js + deploy via GitHub Actions (`.github/workflows/deploy.yml`) que faz o build e sobe apenas o `dist/`. Ver DEC-007.
+6. **GitHub Pages — página em branco** — Sem `base: './'` no `vite.config.js`, o Vite gera URLs absolutas para os assets (ex: `/assets/index.js`). O GitHub Pages serve o app em `/fileview/` — os arquivos não são encontrados e a página fica completamente em branco, sem erro visível. **Solução:** `base: './'` no vite.config.js. Se ainda der erro, usar `base: '/nome-do-repo/'` explicitamente. Ver DEC-007.
 
 ## Contexto de Produto
 - **Usuário-alvo:** desenvolvedor solo ou pequena equipe que lida com .md, .json, .csv, configs no dia a dia

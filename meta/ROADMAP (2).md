@@ -16,35 +16,36 @@
 
 ---
 
-## 🟡 F2 — Estabilidade + UX *(próxima)*
+## 🟡 F2 — Estabilidade + UX *(em curso)*
 **Objetivo:** Corrigir todos os bugs conhecidos e tornar cada viewer mais polido para uso diário.
-**Critério de conclusão:** Zero bugs em abertura/edição básica; UX de cada formato adequada para uso real.
+**Critério de conclusão:** Zero bugs em abertura/edição básica; UX adequada para uso real.
 - [x] FIX-001: PDF Blob URL (AppContext + PdfViewer)
 - [x] FIX-002: CSV editar via `__dataIdx` original
 - [x] CSV: botão ✕ cancelar edição + botão limpar filtro
+- [x] GitHub Pages: `base: './'` em vite.config.js (DEC-007)
 - [ ] JSON: modo formulário/cards — chave de 1º nível → seção; array → tabela inline
 - [ ] JSON: Table View automático para arrays de objetos uniformes
 - [ ] CSV: Tab navigation entre células (confirm + mover)
 - [ ] Busca Ctrl+F no SourceEditor (highlight de ocorrências)
-- [ ] Tooltips customizados na toolbar do editor MD
+- [ ] Tooltips customizados na toolbar do MD editor
 
 ---
 
 ## 🔵 F3 — Novos Formatos *(futuro, sem data)*
 **Objetivo:** Expandir cobertura de formatos além dos originais.
 - [ ] `.xlsx` via SheetJS (múltiplas sheets, leitura + escrita)
-- [ ] `.docx` visualização via mammoth.js (read-only com boa fidelidade HTML)
-- [ ] PDF: anotações overlay (highlight, notas) via pdf-lib, sem tocar no conteúdo original
-- [ ] Tema dark/light alternável (CSS vars já prontas; é só toggle de classe + localStorage)
+- [ ] `.docx` visualização via mammoth.js (read-only)
+- [ ] PDF: anotações overlay (highlight, notas) via pdf-lib
+- [ ] Tema dark/light alternável (CSS vars já prontas)
 
 ---
 
 ## 🔵 F4 — Desktop App *(futuro, sem data)*
 **Objetivo:** Versão instalável com integração nativa do SO.
-- [ ] Empacotamento Electron ou Tauri (bundle menor)
-- [ ] Abrir arquivos diretamente pelo sistema (sem drag-and-drop obrigatório)
-- [ ] Associar extensões no SO (.md, .json abre com FileView)
-- [ ] Salvar no disco diretamente (sem download)
+- [ ] Empacotamento Electron ou Tauri
+- [ ] Abrir arquivos diretamente pelo sistema
+- [ ] Associar extensões no SO
+- [ ] Salvar no disco diretamente
 - [ ] Histórico de arquivos recentes persistente
 
 ---

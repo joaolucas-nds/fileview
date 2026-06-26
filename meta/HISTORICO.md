@@ -7,7 +7,7 @@
 
 ## 1. Análise de Viabilidade Técnica e de Mercado (2026-05)
 
-Pesquisa realizada antes de construir o projeto. Resultado também disponível como relatório HTML interativo (`file_viewer_viability_report.html` na raiz do projeto).
+Pesquisa realizada antes de construir o projeto. Resultado também disponível como relatório HTML interativo (`file_viewer_viability_report.html` na raiz do projeto, com abas por formato).
 
 ### Conclusão de mercado
 Não existe ferramenta **gratuita + open-source** que combine Markdown WYSIWYG, JSON visual, PDF e CSV numa interface só com boa usabilidade. As melhores ferramentas existentes são especializadas:
@@ -23,17 +23,17 @@ Não existe ferramenta **gratuita + open-source** que combine Markdown WYSIWYG, 
 
 ### Viabilidade por formato (resumo)
 
-**Markdown — altíssima.** `marked` para preview; Tiptap/ProseMirror para WYSIWYG. Todas as features da toolbar são nativas ou extensões do Tiptap.
+**Markdown — altíssima.** `marked` para preview; Tiptap/ProseMirror para WYSIWYG. Todas as features da toolbar são nativas ou extensões do Tiptap. Único ponto médio: font-size e tipografia arbitrária não serializam bem para .md puro.
 
-**JSON — alta.** Tree view interativo é o padrão de mercado. Componente recursivo customizado é mais controlável que bibliotecas desatualizadas. Table View para arrays de objetos é bônus viável.
+**JSON — alta.** Tree view interativo é o padrão de mercado. Componente recursivo customizado é mais controlável que bibliotecas desatualizadas. Table View para arrays de objetos é bônus viável com detecção automática de schema.
 
 **PDF — alta para visualizar; inviável para editar conteúdo.** `pdfjs-dist` (Mozilla, 4M downloads/semana) resolve visualização. Edição de conteúdo existente exige engine proprietária paga. Anotações overlay via `pdf-lib` são possíveis no futuro.
 
 **CSV — alta.** `papaparse` é o parser CSV mais robusto do JS. Tabela com sort/filter/edit é straightforward.
 
-**Outros (YAML, XML, .env, .toml, .log, .svg, .txt) — alta para texto.** SourceEditor cobre todos com textarea dark.
+**Outros (YAML, XML, .env, .toml, .log, .svg, .txt) — alta para texto.** SourceEditor cobre todos. Viewers específicos são bônus futuros de baixo custo.
 
-**DOCX — média para visualizar** (`mammoth.js`), **baixa para editar fielmente**.
+**DOCX — média para visualizar** (`mammoth.js` converte .docx → HTML), **baixa para editar fielmente** (estrutura interna complexa demais para fidelidade no browser).
 
 ### Stack escolhida e rationale
 - **React + Vite** — melhor DX para SPA client-side; lazy loading out-of-box
@@ -44,7 +44,7 @@ Não existe ferramenta **gratuita + open-source** que combine Markdown WYSIWYG, 
 
 ### Estimativa de esforço (realizada)
 - F1 MVP (4 formatos): 1 sessão de geração de código assistida ✓
-- F2 Estabilidade: ~3 sessões ✓ (em andamento — bugs corrigidos, deploy funcionando)
+- F2 Estabilidade: ~2-3 sessões *(em andamento)*
 - F3 Novos formatos: ~1 sessão por formato
 - F4 Desktop/Electron: ~2-3 sessões
 
@@ -58,12 +58,8 @@ Se o projeto crescer para casos de uso com centenas de arquivos ou estado muito 
 
 ---
 
-## 3. Por que o GitHub Pages ficava em branco (2026-06-25)
+## 3. Causa raiz do GitHub Pages em branco (2026-06-25)
 
-Dois problemas sobrepostos que juntos causavam a página em branco sem nenhum erro óbvio:
+O Vite sem configuração de `base` gera URLs absolutas para assets no build (`/assets/index-abc123.js`). Em um deploy local ou em `username.github.io` (root), isso funciona. Em `username.github.io/fileview/` (subpasta), o browser tenta carregar `username.github.io/assets/index-abc123.js` — que não existe — e o JavaScript nunca carrega, resultando em página em branco sem nenhum erro óbvio no terminal.
 
-**Problema 1 — `base` ausente no Vite:** sem `base: './'` em `vite.config.js`, o Vite gera URLs absolutas para os assets no build (ex: `<script src="/assets/index-abc.js">`). Em deploy local ou no domínio raiz funciona. Em subpasta (ex: `usuario.github.io/fileview/`), o browser tenta carregar `usuario.github.io/assets/index-abc.js` — que não existe — e o JavaScript nunca carrega. Página em branco, nenhum erro no terminal.
-
-**Problema 2 — código-fonte servido sem build:** o GitHub Pages, quando configurado para servir de um branch/pasta com o código-fonte, tenta entregar os arquivos `.jsx` e `vite.config.js` diretamente como HTML/JS. O browser recebe JSX bruto, não consegue interpretá-lo e exibe uma página em branco.
-
-**Solução completa:** `base: './'` no vite.config.js + `.github/workflows/deploy.yml` que faz o build no servidor do GitHub e publica apenas o `dist/` — nunca o código-fonte. Em GitHub Settings → Pages → Source: selecionar "GitHub Actions" (não uma branch).
+A solução `base: './'` faz o Vite gerar URLs relativas (`./assets/index-abc123.js`), que funcionam corretamente independente do caminho de deploy. Alternativa mais explícita: `base: '/nome-do-repo/'`.

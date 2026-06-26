@@ -6,13 +6,14 @@
 ---
 
 ## Versão Atual
-**[0.1.1]** — 2026-06-05 — Bugfixes: PDF (FIX-001) + CSV cancel + CSV filtered edit (FIX-002)
+**[0.1.1]** — 2026-06-25 — Bugfixes: PDF (FIX-001) + CSV cancel + CSV filtered edit (FIX-002) + GitHub Pages (DEC-007)
 
 ## ✅ Funcionando
 - **Markdown:** preview renderizado (igual ao Claude), editor WYSIWYG Tiptap completo (toolbar + BubbleMenu ao selecionar texto), modo fonte (textarea dark)
 - **JSON:** árvore recursiva colapsável, cores por tipo de dado, edição inline de valores folha (double-click + Enter/Esc), formatar/minificar
 - **CSV:** tabela com cabeçalho fixo sticky, ordenação por coluna (asc/desc), filtro com botão "limpar", edição inline com botão ✕ cancelar (Enter confirma, Esc/✕ cancela), adicionar linha, deletar linha — edição opera sobre `data` original mesmo com filtro ativo
 - **PDF:** renderização por canvas via pdfjs-dist, navegação por páginas, zoom 50%–300% — **Blob URL, sem erro de ArrayBuffer detachado**
+- **GitHub Pages:** deploy via `npm run build` + publicar `dist/` — **`base: './'` corrige página em branco**
 - **Sidebar:** lista de arquivos abertos, indicador de modificado (dot laranja), fechar por arquivo, drag-and-drop lateral
 - **Tabs:** troca de arquivo ativo, fechar por tab, indicador de modificado (● laranja)
 - **Multi-arquivo:** múltiplos arquivos abertos simultaneamente, modos independentes por arquivo
@@ -31,12 +32,13 @@
 - [ ] **JSON Table View** — terceiro modo ("Tabela") quando o JSON é `array of objects` uniforme.
 - [ ] **CSV Tab navigation** — Tab confirma e move para a próxima célula, como planilha.
 - [ ] **Busca Ctrl+F no SourceEditor** — highlight de ocorrências no textarea.
-- [ ] **Tooltips customizados** na toolbar do editor MD (o atributo `title` já existe; só falta o visual).
+- [ ] **Tooltips customizados** na toolbar do editor MD.
 
 ## 📁 Arquivos Críticos (não mexer sem contexto)
 - `src/context/AppContext.jsx` — estado global; PDFs devem ser Blob URL, nunca ArrayBuffer.
-- `src/editors/MarkdownEditor.jsx` — configuração Tiptap; `StarterKit.configure({ codeBlock: false })` é obrigatório.
+- `src/editors/MarkdownEditor.jsx` — configuração Tiptap; `StarterKit.configure({ codeBlock: false })` obrigatório.
 - `src/App.css` — todas as CSS vars e classes `.md-output`/`.tiptap-editor`; mudança reflete em tudo.
+- `vite.config.js` — `base: './'` obrigatório para GitHub Pages; não remover.
 
 ## 💬 Última Sessão
-**2026-06-05** — Sessão 1: criação do projeto do zero (análise de viabilidade → geração de todo o código → build verificado). Sessão 2: usuário identificou 2 bugs (PDF ArrayBuffer detachado + falta de botão cancelar no CSV) e pediu sistema de documentação. Foram corrigidos FIX-001 (AppContext + PdfViewer) e FIX-002 (CsvViewer: `__dataIdx` + botão ✕ cancelar). Gerados todos os 10 documentos de contexto. Próximo: aplicar os 3 arquivos corrigidos substituindo os originais; depois atacar JSON modo formulário/cards.
+**2026-06-25** — Sessão de manutenção: aplicados FIX-001 (PDF Blob URL), FIX-002 (CSV __dataIdx + botão cancelar), DEC-007 (GitHub Pages base); gerados todos os meta/ e log. Instrução renomeada de CLAUDE.md para CEREBRO.md. Próximo: atacar JSON modo formulário/cards (maior impacto visual imediato na F2).
