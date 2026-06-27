@@ -18,32 +18,48 @@ FileView é um visualizador e editor de arquivos que roda 100% no browser (sem s
 - **Syntax highlight:** `lowlight` (dentro dos blocos de código do Tiptap)
 - **Ícones:** `lucide-react` ^0.462.0 (fixado — não atualizar sem testar ícones)
 - **Fontes:** Outfit (UI) + Space Mono (mono/código) via Google Fonts
-- **Deploy:** `npm run dev` local; `npm run build` gera estático em `dist/`
+- **Deploy:** `npm run dev` local · `npm run build` → `dist/` · GitHub Pages via GitHub Actions
 
 ## Estrutura do Projeto
 ```
 fileview/
 ├── package.json
-├── vite.config.js
+├── vite.config.js              # base: './' obrigatório para GitHub Pages
 ├── index.html
+├── .github/
+│   └── workflows/
+│       └── deploy.yml          # auto-build e deploy a cada push na main
+├── meta/                       # documentação de contexto (subir no Projeto do Claude)
+│   ├── CEREBRO.md              # regras de comportamento do assistente
+│   ├── CONTEXT.md              # este arquivo — visão, stack, armadilhas
+│   ├── STATUS.md               # estado atual (rolante)
+│   ├── DECISIONS.md            # decisões e bugs graves documentados
+│   ├── CHANGELOG.md            # histórico de versões entregues
+│   ├── IDEAS.md                # segundo cérebro de ideias
+│   ├── ROADMAP.md              # plano de evolução por fases
+│   ├── GLOSSARY.md             # termos do projeto
+│   ├── HISTORICO.md            # conhecimento consolidado de fases antigas
+│   └── LOG-TEMPLATE.md         # molde do log de sessão (referência fixa)
+├── logs/                       # logs de sessão (Git, não no Projeto)
+│   └── AAAA-MM-DD.md
 └── src/
-    ├── main.jsx                # Bootstrap React
-    ├── App.jsx                 # Layout: sidebar + tab bar + mode switcher + ViewerRouter
-    ├── App.css                 # Design tokens (CSS vars) + estilos globais + .md-output + .tiptap-editor
+    ├── main.jsx
+    ├── App.jsx                 # layout: sidebar + tab bar + mode switcher + ViewerRouter
+    ├── App.css                 # design tokens (CSS vars) + .md-output + .tiptap-editor
     ├── context/
     │   └── AppContext.jsx      # PEÇA CRÍTICA — estado global (ver seção abaixo)
     ├── components/
-    │   ├── Sidebar.jsx         # Lista de arquivos + botão abrir + drop hint lateral
-    │   ├── DropZone.jsx        # Tela de boas-vindas quando nenhum arquivo aberto
-    │   └── ViewerRouter.jsx    # Roteador: ext + mode → viewer/editor (React.lazy)
+    │   ├── Sidebar.jsx
+    │   ├── DropZone.jsx
+    │   └── ViewerRouter.jsx    # React.lazy → viewer/editor por ext + mode
     ├── viewers/
-    │   ├── MarkdownViewer.jsx  # marked → HTML estilizado; read-only
-    │   ├── JsonViewer.jsx      # Árvore recursiva customizada; edição inline de folhas
-    │   ├── CsvViewer.jsx       # Tabela Papa Parse; sort/filter/edit/add/delete row
-    │   └── PdfViewer.jsx       # pdfjs-dist sobre canvas; navegação + zoom
+    │   ├── MarkdownViewer.jsx
+    │   ├── JsonViewer.jsx
+    │   ├── CsvViewer.jsx
+    │   └── PdfViewer.jsx
     └── editors/
-        ├── MarkdownEditor.jsx  # Tiptap WYSIWYG completo; toolbar + BubbleMenu
-        └── SourceEditor.jsx    # Textarea dark para qualquer texto plano
+        ├── MarkdownEditor.jsx
+        └── SourceEditor.jsx
 ```
 
 ## Como o AppContext funciona (CRÍTICO)
@@ -67,23 +83,25 @@ AppContext é a **única fonte de verdade** — elimina prop drilling total.
 ## Convenções de Código
 - Nomes de arquivos, funções e variáveis em **inglês**; comentários em **PT-BR**
 - Commits em PT-BR, imperativo curto
-- Estilo: zero CSS modules — tudo em CSS vars globais (`App.css`) ou `style={{}}` inline
+- Estilo: zero CSS modules — CSS vars globais (`App.css`) ou `style={{}}` inline
 - TypeScript: não usado; migração futura considerada mas não prioridade
 
 ## Armadilhas Conhecidas
 
-1. **PDF — ArrayBuffer detachado pelo worker** — PDF.js v4 faz `postMessage` com `transfer` do ArrayBuffer para o worker thread, o que o **detacha** do main thread permanentemente. Na remontagem do componente ou ao trocar de arquivo, o buffer está morto → erro `"already detached"`. **Solução obrigatória:** armazenar PDF como `URL.createObjectURL(blob)` em `AppContext.openFile`; passar a string URL para `lib.getDocument(url)` no PdfViewer; revogar com `URL.revokeObjectURL` no `closeFile`. Ver FIX-001.
+1. **PDF — ArrayBuffer detachado pelo worker** — PDF.js v4 faz `postMessage` com `transfer` do ArrayBuffer para o worker thread, o que o **detacha** do main thread permanentemente. Na remontagem do componente, o buffer está morto → erro `"already detached"`. **Solução:** armazenar PDF como `URL.createObjectURL(blob)` em `AppContext.openFile`; passar a string URL para `lib.getDocument(url)` no PdfViewer; revogar com `URL.revokeObjectURL` no `closeFile`. Ver FIX-001.
 
-2. **CSV: editar enquanto filtrado** — O `filtered` é um array derivado; reconstruir o CSV a partir dele descarta as linhas fora do filtro. A versão corrigida injeta `__dataIdx` (índice no `data` original) em cada linha do `filtered`, e `commitEdit` opera sobre `data` via esse índice. Ver FIX-002.
+2. **CSV: editar enquanto filtrado** — O `filtered` é array derivado; reconstruir o CSV a partir dele descarta linhas fora do filtro. A versão corrigida injeta `__dataIdx` (índice no `data` original) em cada linha do `filtered`; `commitEdit` opera sobre `data` via esse índice. Ver FIX-002.
 
-3. **Tiptap: StarterKit × CodeBlockLowlight** — `StarterKit` inclui um `codeBlock` padrão que conflita silenciosamente com `CodeBlockLowlight`. É **obrigatório** `StarterKit.configure({ codeBlock: false })`. Omitir quebra o editor sem erro no console.
+3. **Tiptap: StarterKit × CodeBlockLowlight** — `StarterKit` inclui `codeBlock` padrão que conflita silenciosamente com `CodeBlockLowlight`. É **obrigatório** `StarterKit.configure({ codeBlock: false })`. Omitir quebra o editor sem erro no console.
 
-4. **lucide-react versão** — fixado em `^0.462.0`. Versões mais novas renomeiam ícones; não atualizar sem testar cada ícone usado no projeto.
+4. **lucide-react versão** — fixado em `^0.462.0`. Versões mais novas renomeiam ícones; não atualizar sem testar.
 
-5. **onBlur vs cancelar edição (CSV/JSON)** — `onBlur` do input de edição sempre commita. Para cancelar via botão visual, o `onClick` do botão chega depois do `onBlur` e o commit já aconteceu. Solução: usar `onMouseDown + preventDefault` no botão cancelar — isso dispara antes do `onBlur`.
+5. **onBlur vs cancelar edição** — `onBlur` do input sempre commita antes de qualquer `onClick`. Para botão de cancelar, usar `onMouseDown + preventDefault` — dispara antes do `onBlur`.
+
+6. **GitHub Pages — página em branco** — Sem `base: './'` no `vite.config.js`, o Vite gera URLs absolutas para assets (`/assets/index.js`). O Pages serve o app em `/nome-do-repo/` e não encontra os arquivos → branco sem erro visível. Além disso, servir o código-fonte diretamente (sem build) também resulta em branco. **Solução completa:** `base: './'` no vite.config.js + deploy via GitHub Actions (`.github/workflows/deploy.yml`) que faz o build e sobe apenas o `dist/`. Ver DEC-007.
 
 ## Contexto de Produto
 - **Usuário-alvo:** desenvolvedor solo ou pequena equipe que lida com .md, .json, .csv, configs no dia a dia
 - **Dor que resolve:** abrir .md no browser e ver sintaxe crua; precisar de app separado para cada formato
 - **O que é sucesso:** abrir qualquer arquivo texto/dados e ter experiência visual imediata; editar e salvar sem fricção
-- **O que deliberadamente NÃO é:** editor de código (sem LSP, sem Git); ferramenta colaborativa; substituto do Word/Excel; app hospedado com backend; editor de conteúdo de PDF
+- **O que deliberadamente NÃO é:** editor de código (sem LSP, sem Git); ferramenta colaborativa; substituto do Word/Excel; editor de conteúdo de PDF

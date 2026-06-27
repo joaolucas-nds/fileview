@@ -2,7 +2,7 @@
 
 > **Referência fixa.** Este arquivo é o MOLDE — nunca é substituído pelo conteúdo preenchido.
 > Ao final de cada sessão, o assistente entrega um arquivo novo `logs/AAAA-MM-DD.md` neste formato.
-> Os logs vivem em `logs/` no Git (NÃO no Projeto) e são lidos só sob demanda.
+> Os logs vivem em `logs/` no Git (NÃO no Projeto do Claude) e são lidos só sob demanda.
 
 ---
 
@@ -18,13 +18,13 @@
 - [Decisões tomadas → quais viraram DEC-N em DECISIONS.md.]
 
 ## Bugs
-- [Bugs encontrados/resolvidos → quais viraram FIX-N.]
+- [Bugs encontrados/resolvidos → quais viraram FIX-N em DECISIONS.md.]
 
 ## Aprendizados / armadilhas
-- [O que descobrimos que vale virar armadilha em CONTEXT.md.]
+- [O que descobrimos que vale virar armadilha #N em CONTEXT.md.]
 
 ## Onde parei
-[Estado exato ao encerrar + próximo passo óbvio. Alimenta o «Última Sessão» do STATUS.]
+[Estado exato ao encerrar + próximo passo óbvio. Alimenta o «Última Sessão» do STATUS.md.]
 
 ## Próximos passos
-- [Ações para a próxima sessão.]
+- [ ] [Ações para a próxima sessão.]

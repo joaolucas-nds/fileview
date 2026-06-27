@@ -6,32 +6,38 @@
 ---
 
 ## [Não lançado]
+### Adicionado
+- `.github/workflows/deploy.yml` — GitHub Actions para build e deploy automático no GitHub Pages a cada push na main.
 
 ---
 
-## [0.1.1] — 2026-06-05
+## [0.1.1] — 2026-06-25
 ### Corrigido
-- **PDF (FIX-001):** `AppContext.openFile` agora converte o ArrayBuffer em Blob URL antes de armazenar em estado. `PdfViewer` passa a URL string diretamente para `lib.getDocument()`. PDF pode ser aberto, fechado e reaberto sem o erro `"ArrayBuffer at index 0 is already detached"`. `closeFile` revoga a Blob URL para evitar memory leak.
-- **CSV (FIX-002):** `commitEdit` agora opera sobre o array `data` original via `__dataIdx` injetado em cada linha do `filtered`. Editar uma célula com filtro ativo não descarta mais as linhas fora do filtro.
-- **CSV:** adicionado botão visual ✕ para cancelar edição inline (usa `onMouseDown + preventDefault` para disparar antes do `onBlur`). Esc também continua funcionando.
-- **CSV:** adicionado botão "✕ limpar" ao lado do campo de filtro para limpar a busca com um clique.
+- **PDF (FIX-001):** `AppContext.openFile` converte ArrayBuffer em Blob URL antes de armazenar. `PdfViewer` passa a URL string para `lib.getDocument()`. PDF pode ser aberto, fechado e reaberto sem o erro `"ArrayBuffer at index 0 is already detached"`. `closeFile` revoga a Blob URL para evitar memory leak.
+- **CSV (FIX-002):** `commitEdit` opera sobre o array `data` original via `__dataIdx` injetado em cada linha do `filtered`. Editar célula com filtro ativo não descarta mais linhas fora do filtro.
+- **CSV:** adicionado botão visual ✕ para cancelar edição inline (`onMouseDown + preventDefault` para disparar antes do `onBlur`). Esc também funciona.
+- **CSV:** adicionado botão "✕ limpar" no campo de filtro.
+- **Deploy (DEC-007):** `vite.config.js` com `base: './'` — corrige página em branco no GitHub Pages causada por URLs absolutas de assets.
+
+### Alterado
+- Instrução do assistente renomeada de `CLAUDE.md` para `CEREBRO.md`.
+- Documentação de contexto consolidada em `meta/` (duplicatas eliminadas).
 
 ---
 
 ## [0.1.0] — 2026-06-05
 ### Adicionado
-- Viewer de Markdown com renderização visual via `marked` (GFM) — modo **Prévia**
-- Editor WYSIWYG de Markdown via Tiptap v2 + `tiptap-markdown` — modo **Editar** — toolbar completa: títulos H1–H4, negrito, itálico, sublinhado, tachado, destaque, código inline, MAIÚSCULO/minúsculo por seleção, alinhamento (esq/centro/dir), listas (marcadores/numerada/tarefas com checkbox), citação, bloco de código com syntax highlighting (lowlight), linha horizontal, tabela (inserir + add col/linha + deletar), seletor de cor de texto, desfazer/refazer; BubbleMenu flutuante ao selecionar texto
-- Modo **Fonte** (textarea dark monospace) para Markdown
-- Visualizador JSON: árvore recursiva colapsável, cores por tipo (string=verde, number=azul, boolean=roxo, null=cinza), edição inline de valores folha (double-click + Enter/Esc), formatar (prettify) e minificar
-- Visualizador CSV: tabela com cabeçalho fixo sticky, ordenação por coluna (asc/desc), filtro por texto global, edição inline de células (double-click + Enter/Esc), adicionar linha vazia, deletar linha (✕)
-- Visualizador PDF: renderização página a página via canvas (pdfjs-dist), navegação (← → + input numérico), zoom 50%–300%, reset/ajustar
-- SourceEditor: textarea dark monospace para .yaml, .yml, .xml, .svg, .txt, .env, .toml, .log e demais textos
-- Sidebar escura com lista de arquivos abertos, indicador de modificado (dot laranja), fechar por arquivo, drop hint lateral
-- Tab bar superior com troca de arquivo ativo, botão fechar (✕), indicador de modificado (● laranja)
-- Seletor de modo por formato: Prévia/Editar/Fonte (MD) · Árvore/Texto (JSON/YAML/XML/etc.) · Tabela/Texto (CSV)
-- Botão "Salvar ↓" (download do arquivo modificado) — aparece apenas quando `isDirty`
-- Drop zone global (arrastar arquivo em qualquer ponto da tela abre o arquivo)
-- Múltiplos arquivos abertos simultaneamente com modos independentes por arquivo
-- Fontes: Outfit (UI) + Space Mono (código/mono) via Google Fonts
-- Design tokens como CSS vars em App.css (cores, radii, fontes, dimensões)
+- Viewer de Markdown com renderização via `marked` (GFM) — modo **Prévia**
+- Editor WYSIWYG de Markdown via Tiptap v2 + `tiptap-markdown` — modo **Editar** — toolbar: H1–H4, negrito, itálico, sublinhado, tachado, destaque, código inline, MAIÚSCULO/minúsculo, alinhamento, listas (marcadores/numerada/tarefas), citação, bloco de código com syntax highlighting, linha horizontal, tabela, cor de texto, desfazer/refazer; BubbleMenu ao selecionar texto
+- Modo **Fonte** (textarea dark) para Markdown
+- Visualizador JSON: árvore colapsável, cores por tipo, edição inline de folhas (double-click + Enter/Esc), formatar/minificar
+- Visualizador CSV: tabela com cabeçalho fixo, sort por coluna, filtro, edição inline, adicionar/deletar linhas
+- Visualizador PDF: canvas via pdfjs-dist, navegação por páginas, zoom 50%–300%
+- SourceEditor: textarea dark para .yaml, .yml, .xml, .svg, .txt, .env, .toml, .log e outros
+- Sidebar escura com lista de arquivos, indicador de modificado, fechar, drag-and-drop lateral
+- Tab bar com troca de arquivo ativo, fechar, indicador de modificado
+- Seletor de modo por formato (Prévia/Editar/Fonte · Árvore/Texto · Tabela/Texto)
+- Botão "Salvar ↓" (download) quando `isDirty`
+- Drop zone global
+- Múltiplos arquivos abertos com modos independentes por arquivo
+- Fontes: Outfit + Space Mono via Google Fonts; design tokens como CSS vars em App.css
