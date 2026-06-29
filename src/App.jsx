@@ -65,6 +65,11 @@ function Inner() {
     { key: 'edit', label: 'Editar' },
     { key: 'source', label: 'Fonte' },
   ]
+  const jsonModes = [
+    { key: 'view', label: 'Árvore' },
+    { key: 'form', label: 'Formulário' },
+    { key: 'source', label: 'Texto' },
+  ]
   const structModes = [
     { key: 'view', label: 'Árvore' },
     { key: 'source', label: 'Texto' },
@@ -77,7 +82,8 @@ function Inner() {
   let modeBtns = []
   if (activeFile) {
     if (activeFile.ext === 'md') modeBtns = mdModes
-    else if (['json','yaml','yml','xml','toml','env'].includes(activeFile.ext)) modeBtns = structModes
+    else if (activeFile.ext === 'json') modeBtns = jsonModes
+    else if (['yaml','yml','xml','toml','env'].includes(activeFile.ext)) modeBtns = structModes
     else if (activeFile.ext === 'csv') modeBtns = csvModes
   }
 
