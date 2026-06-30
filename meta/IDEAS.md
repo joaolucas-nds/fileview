@@ -7,9 +7,6 @@
 
 ## 💡 Ideias Ativas — Usuário
 
-### 2026-06 — JSON: modo formulário/cards/pages estruturadas
-Em vez da árvore de nós, ter um layout onde cada chave de primeiro nível vira uma "seção" ou "card" com título, e dentro de cada seção os campos aparecem como `label: valor` editáveis — "cada categoria corresponde a preencher um espaço". Arrays de objetos seriam detectados e renderizados como tabela. Como um formulário gerado dinamicamente a partir do schema implícito do JSON.
-
 ### 2026-06 — CSV: mais prático, eficiente e intuitivo
 A tabela atual funciona mas não é fluida como planilha real. Melhorias desejadas: Tab para mover entre células, seleção de múltiplas células, copiar/colar bloco de células, resize de colunas arrastando o header, freeze de linha de cabeçalho (já tem) e possível freeze da primeira coluna.
 
@@ -17,8 +14,8 @@ A tabela atual funciona mas não é fluida como planilha real. Melhorias desejad
 
 ## 🤖 Ideias Ativas — Assistente
 
-### 2026-06-05 — JSON: Table View automático para arrays de objetos
-Quando o JSON é `array of objects` com schema uniforme (ex: `[{id, name, status}, ...]`), detectar automaticamente e oferecer modo "Tabela" além de Árvore/Texto — igual ao CsvViewer. Seria o terceiro modo no switcher. Detecção: `Array.isArray(data) && data.length > 0 && typeof data[0] === 'object' && !Array.isArray(data[0])`.
+### 2026-06-28 — JSON formulário: edição inline dos campos
+Os campos do FormView atualmente são read-only. Próximo passo natural: clicar num valor no card/tab/painel e editar inline (igual ao que a Árvore já faz com double-click). Salvar atualiza o JSON via `updateContent`.
 
 ### 2026-06-05 — JSON: botão "copiar caminho" por nó
 Em cada nó da árvore, um botão que copia o caminho completo (ex: `users[0].address.city`) para o clipboard. Útil ao trabalhar com APIs ou escrever queries JSONPath.
@@ -27,22 +24,22 @@ Em cada nó da árvore, um botão que copia o caminho completo (ex: `users[0].ad
 Pressionar Tab enquanto edita confirma e move para a próxima coluna (ou primeira coluna da próxima linha). Shift+Tab volta. Comportamento idêntico ao Excel/Google Sheets.
 
 ### 2026-06-05 — Busca Ctrl+F dentro do documento
-Para SourceEditor e MarkdownViewer: campo de busca flutuante que destaca ocorrências e permite navegar (↑↓). Para JSON, busca por chave ou valor na árvore.
+Para SourceEditor e MarkdownViewer: campo de busca flutuante que destaca ocorrências e permite navegar (↑↓). Para JSON, busca por chave ou valor na árvore ou nos campos do formulário.
 
 ### 2026-06-05 — Suporte a .xlsx via SheetJS
 SheetJS é a biblioteca padrão para Excel no browser. XlsxViewer similar ao CsvViewer com suporte a múltiplas abas.
 
 ### 2026-06-05 — PDF: anotações overlay
-`pdf-lib` permite adicionar texto e formas sobre um PDF sem alterar o conteúdo original. Não quebra DEC-004 (conteúdo original não é editado).
+`pdf-lib` permite adicionar texto e formas sobre um PDF sem alterar o conteúdo original. Não quebra DEC-004.
 
 ### 2026-06-05 — Tema escuro/claro alternável
 Sidebar já é dark; conteúdo é light. Toggle para tema completamente dark persistindo em localStorage. CSS vars já centralizadas — é só toggle de classe no `<html>`.
 
 ### 2026-06-05 — Versão desktop com Electron ou Tauri
-Abrir arquivos diretamente do sistema sem drag-and-drop, associar extensões no SO, salvar direto no disco. Tauri gera bundle menor que Electron.
+Abrir arquivos diretamente do sistema sem drag-and-drop, associar extensões no SO, salvar direto no disco.
 
 ### 2026-06-05 — Tooltips customizados na toolbar do MD editor
-O `title` HTML já existe em todos os botões da toolbar. Tooltips visuais com delay melhorariam a UX para novos usuários.
+O `title` HTML já existe em todos os botões. Tooltips visuais com delay melhorariam a UX para novos usuários.
 
 ---
 
@@ -54,8 +51,8 @@ O `title` HTML já existe em todos os botões da toolbar. Tooltips visuais com d
 - **FIX-002 (CSV edição com filtro)** — `__dataIdx` + edita no `data` original, 0.1.1.
 - **Botão cancelar edição CSV** — botão ✕ com `onMouseDown + preventDefault`, 0.1.1.
 - **Botão "✕ limpar" no filtro CSV** — 0.1.1.
-- **GitHub Pages fix** — `base: './'` em vite.config.js, 0.1.1.
-- **GitHub Pages deploy automático** — `.github/workflows/deploy.yml` via GitHub Actions.
+- **GitHub Pages fix** — `base: './'` em vite.config.js + GitHub Actions deploy, 0.1.1/0.1.2.
+- **JSON modo formulário/cards** — FormView com Cards, Tabs e Painel; arrays → tabela automática, 0.1.2.
 
 ---
 

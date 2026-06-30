@@ -23,8 +23,8 @@
 - [x] CSV: botão ✕ cancelar edição + botão limpar filtro
 - [x] GitHub Pages: `base: './'` em vite.config.js (DEC-007)
 - [x] Deploy automático via GitHub Actions (`.github/workflows/deploy.yml`)
-- [ ] JSON: modo formulário/cards — chave de 1º nível → seção; array → tabela inline
-- [ ] JSON: Table View automático para arrays de objetos uniformes
+- [x] JSON: modo Formulário — Cards, Tabs e Painel com sub-switcher
+- [ ] JSON formulário: edição inline dos campos (atualmente read-only)
 - [ ] CSV: Tab navigation entre células (confirm + mover)
 - [ ] Busca Ctrl+F no SourceEditor (highlight de ocorrências)
 - [ ] Tooltips customizados na toolbar do MD editor

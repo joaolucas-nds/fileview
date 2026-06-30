@@ -6,8 +6,18 @@
 ---
 
 ## [Não lançado]
+
+---
+
+## [0.1.2] — 2026-06-28
 ### Adicionado
-- `.github/workflows/deploy.yml` — GitHub Actions para build e deploy automático no GitHub Pages a cada push na main.
+- **JSON — modo Formulário:** novo modo de visualização (`form`) para arquivos `.json`. Cada chave de 1º nível vira uma seção. Conteúdo é renderizado como grid de campos rotulados (objetos), tabela automática (arrays de objetos com schema uniforme) ou lista de chips (arrays de primitivos).
+- **JSON — sub-switcher de layout:** barra `Layout: Cards | Tabs | Painel` dentro do modo Formulário. Escolha persistida em `localStorage` (`fv-json-layout`). Cards = grade responsiva de cards; Tabs = aba por seção; Painel = navegação lateral.
+- **App.jsx — `jsonModes`:** botão "Formulário" aparece na barra de abas apenas para `.json`. Formatos `yaml/yml/xml/toml/env` continuam com Árvore/Texto (sem Formulário, pois o parser é JSON-only).
+
+### Alterado
+- `src/App.jsx` — `jsonModes` separado de `structModes`; `.json` usa `jsonModes`, demais formatos estruturados usam `structModes`.
+- `src/viewers/JsonViewer.jsx` — versão completa substituída; modo Árvore preservado integralmente; adicionados `FormView`, `CardLayout`, `TabLayout`, `PanelLayout`, `SectionContent`, `Field`, `TypedValue`, `ArrayTable`, `PrimitiveList`.
 
 ---
 
@@ -15,9 +25,12 @@
 ### Corrigido
 - **PDF (FIX-001):** `AppContext.openFile` converte ArrayBuffer em Blob URL antes de armazenar. `PdfViewer` passa a URL string para `lib.getDocument()`. PDF pode ser aberto, fechado e reaberto sem o erro `"ArrayBuffer at index 0 is already detached"`. `closeFile` revoga a Blob URL para evitar memory leak.
 - **CSV (FIX-002):** `commitEdit` opera sobre o array `data` original via `__dataIdx` injetado em cada linha do `filtered`. Editar célula com filtro ativo não descarta mais linhas fora do filtro.
-- **CSV:** adicionado botão visual ✕ para cancelar edição inline (`onMouseDown + preventDefault` para disparar antes do `onBlur`). Esc também funciona.
+- **CSV:** adicionado botão visual ✕ para cancelar edição inline (`onMouseDown + preventDefault`). Esc também funciona.
 - **CSV:** adicionado botão "✕ limpar" no campo de filtro.
-- **Deploy (DEC-007):** `vite.config.js` com `base: './'` — corrige página em branco no GitHub Pages causada por URLs absolutas de assets.
+- **Deploy (DEC-007):** `vite.config.js` com `base: './'` — corrige página em branco no GitHub Pages.
+
+### Adicionado
+- `.github/workflows/deploy.yml` — GitHub Actions: build automático + deploy de `dist/` a cada push na main.
 
 ### Alterado
 - Instrução do assistente renomeada de `CLAUDE.md` para `CEREBRO.md`.
@@ -28,16 +41,11 @@
 ## [0.1.0] — 2026-06-05
 ### Adicionado
 - Viewer de Markdown com renderização via `marked` (GFM) — modo **Prévia**
-- Editor WYSIWYG de Markdown via Tiptap v2 + `tiptap-markdown` — modo **Editar** — toolbar: H1–H4, negrito, itálico, sublinhado, tachado, destaque, código inline, MAIÚSCULO/minúsculo, alinhamento, listas (marcadores/numerada/tarefas), citação, bloco de código com syntax highlighting, linha horizontal, tabela, cor de texto, desfazer/refazer; BubbleMenu ao selecionar texto
+- Editor WYSIWYG de Markdown via Tiptap v2 + `tiptap-markdown` — modo **Editar** — toolbar completa
 - Modo **Fonte** (textarea dark) para Markdown
-- Visualizador JSON: árvore colapsável, cores por tipo, edição inline de folhas (double-click + Enter/Esc), formatar/minificar
+- Visualizador JSON: árvore colapsável, cores por tipo, edição inline de folhas, formatar/minificar
 - Visualizador CSV: tabela com cabeçalho fixo, sort por coluna, filtro, edição inline, adicionar/deletar linhas
 - Visualizador PDF: canvas via pdfjs-dist, navegação por páginas, zoom 50%–300%
 - SourceEditor: textarea dark para .yaml, .yml, .xml, .svg, .txt, .env, .toml, .log e outros
-- Sidebar escura com lista de arquivos, indicador de modificado, fechar, drag-and-drop lateral
-- Tab bar com troca de arquivo ativo, fechar, indicador de modificado
-- Seletor de modo por formato (Prévia/Editar/Fonte · Árvore/Texto · Tabela/Texto)
-- Botão "Salvar ↓" (download) quando `isDirty`
-- Drop zone global
-- Múltiplos arquivos abertos com modos independentes por arquivo
+- Sidebar, tab bar, seletor de modo, botão "Salvar ↓", drop zone global, multi-arquivo
 - Fontes: Outfit + Space Mono via Google Fonts; design tokens como CSS vars em App.css
