@@ -24,6 +24,7 @@
 - [x] GitHub Pages: `base: './'` em vite.config.js (DEC-007)
 - [x] Deploy automático via GitHub Actions (`.github/workflows/deploy.yml`)
 - [x] JSON: modo Formulário — Cards, Tabs e Painel com sub-switcher
+- [x] JSON: UX de tabelas grandes — truncamento, paginação, modal de detalhe (DEC-008)
 - [ ] JSON formulário: edição inline dos campos (atualmente read-only)
 - [ ] CSV: Tab navigation entre células (confirm + mover)
 - [ ] Busca Ctrl+F no SourceEditor (highlight de ocorrências)

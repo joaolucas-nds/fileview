@@ -14,6 +14,12 @@ A tabela atual funciona mas não é fluida como planilha real. Melhorias desejad
 
 ## 🤖 Ideias Ativas — Assistente
 
+### 2026-07-01 — ArrayTable: seletor de colunas visíveis
+Para tabelas com muitas colunas (10+), permitir esconder/mostrar colunas via um menu "Colunas" — padrão usado por Airtable e Notion database view. Reduz a necessidade de scroll horizontal quando nem todas as colunas importam para a inspeção atual. Ficou de fora do DEC-008 por ser escopo maior; registrar aqui para retomar se o caso de uso aparecer de novo.
+
+### 2026-07-01 — RowDetailModal: edição inline
+Hoje o modal de registro completo (ArrayTable) é read-only, assim como os campos do FormView. Quando a edição inline dos campos do formulário for implementada (ideia abaixo), estender o mesmo padrão para dentro do modal.
+
 ### 2026-06-28 — JSON formulário: edição inline dos campos
 Os campos do FormView atualmente são read-only. Próximo passo natural: clicar num valor no card/tab/painel e editar inline (igual ao que a Árvore já faz com double-click). Salvar atualiza o JSON via `updateContent`.
 
@@ -53,6 +59,7 @@ O `title` HTML já existe em todos os botões. Tooltips visuais com delay melhor
 - **Botão "✕ limpar" no filtro CSV** — 0.1.1.
 - **GitHub Pages fix** — `base: './'` em vite.config.js + GitHub Actions deploy, 0.1.1/0.1.2.
 - **JSON modo formulário/cards** — FormView com Cards, Tabs e Painel; arrays → tabela automática, 0.1.2.
+- **JSON Formulário: UX de tabelas grandes** — truncamento com ellipsis, paginação, modal de registro completo, cards de tabela em largura total. Ver DEC-008. 0.1.3.
 
 ---
 
@@ -61,3 +68,4 @@ O `title` HTML já existe em todos os botões. Tooltips visuais com delay melhor
 - **Editar conteúdo de PDF** — impossível no browser sem engine proprietária paga. Ver DEC-004.
 - **react-json-view** — sem manutenção desde 2021, incompatível com React 18. Ver DEC-003.
 - **TypeScript imediato** — aumentaria fricção no estágio atual; revisitar na F3.
+- **Virtualização de linhas (react-window) no ArrayTable** — complexidade desnecessária para o volume atual de dados (centenas de linhas); paginação simples resolve. Ver DEC-008. Revisitar se algum JSON real chegar a dezenas de milhares de itens.

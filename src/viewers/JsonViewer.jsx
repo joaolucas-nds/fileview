@@ -174,33 +174,143 @@ function Field({ label, value }) {
   )
 }
 
-// Tabela para arrays de objetos uniformes
+// Botão de paginação
+const pageBtn = (disabled) => ({
+  padding: '2px 9px', fontSize: '11px', borderRadius: 'var(--radius-sm)',
+  border: '1px solid var(--border)', background: 'var(--surface)',
+  color: disabled ? 'var(--text-faint)' : 'var(--text)',
+  cursor: disabled ? 'not-allowed' : 'pointer',
+})
+
+// Modal de detalhe — mostra o registro completo sem truncamento, campo por campo.
+// Resolve o caso de tabelas com colunas de texto longo (ex: text_content):
+// a tabela trunca com ellipsis, o clique na linha revela o valor inteiro.
+function RowDetailModal({ row, onClose }) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: 'var(--surface)', borderRadius: 'var(--radius-md)',
+          maxWidth: '640px', width: '92%', maxHeight: '80vh', overflowY: 'auto',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.3)',
+        }}
+      >
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '12px 16px', borderBottom: '1px solid var(--border)',
+          position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1,
+        }}>
+          <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text)' }}>Registro completo</span>
+          <button onClick={onClose} style={{
+            fontSize: '13px', padding: '2px 9px', borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--border)', color: 'var(--text-muted)', cursor: 'pointer', background: 'transparent',
+          }}>✕</button>
+        </div>
+        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {Object.entries(row).filter(([k]) => k !== '__dataIdx').map(([k, v]) => (
+            <div key={k} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>{k}</span>
+              <div style={{
+                background: 'var(--gray-light)', border: '0.5px solid var(--border)',
+                borderRadius: 'var(--radius-sm)', padding: '6px 10px',
+                fontSize: '12px', fontFamily: 'var(--font-mono)',
+                whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                color: typeof v === 'string' ? 'var(--green)' : typeof v === 'number' ? 'var(--blue)' : typeof v === 'boolean' ? 'var(--purple)' : 'var(--text-faint)',
+              }}>
+                {v === null || v === undefined ? 'null' : typeof v === 'string' ? `"${v}"` : typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Tabela para arrays de objetos uniformes.
+// Colunas com table-layout:fixed + ellipsis de uma linha evitam que texto longo
+// (ex: text_content) estique a altura da linha. Paginação evita renderizar
+// centenas de linhas de uma vez. Clique na linha abre o registro completo.
+const ROWS_PER_PAGE = 20
+
 function ArrayTable({ value }) {
   const keys = arrayKeys(value)
+  const [page, setPage] = useState(0)
+  const [selectedRow, setSelectedRow] = useState(null)
+  const totalPages = Math.max(1, Math.ceil(value.length / ROWS_PER_PAGE))
+
+  // Reseta a página se o array mudar (troca de arquivo)
+  useEffect(() => { setPage(0) }, [value])
+
+  const pageRows = value.slice(page * ROWS_PER_PAGE, page * ROWS_PER_PAGE + ROWS_PER_PAGE)
+
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <table style={{ borderCollapse: 'collapse', minWidth: '100%', fontSize: '12px' }}>
-        <thead>
-          <tr>
-            {keys.map(k => (
-              <th key={k} style={{ padding: '5px 10px', textAlign: 'left', background: 'var(--gray-light)', border: '0.5px solid var(--border)', fontFamily: 'var(--font-mono)', fontWeight: '500', color: 'var(--amber)', whiteSpace: 'nowrap' }}>
-                {k}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {value.map((row, i) => (
-            <tr key={i}>
+    <div>
+      {value.length > ROWS_PER_PAGE && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '11px', color: 'var(--text-faint)' }}>
+          <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} style={pageBtn(page === 0)}>◀</button>
+          <span>
+            Linhas {page * ROWS_PER_PAGE + 1}–{Math.min((page + 1) * ROWS_PER_PAGE, value.length)} de {value.length} · página {page + 1}/{totalPages}
+          </span>
+          <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} style={pageBtn(page >= totalPages - 1)}>▶</button>
+        </div>
+      )}
+
+      <div style={{ overflowX: 'auto', border: '0.5px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', fontSize: '12px' }}>
+          <thead>
+            <tr>
               {keys.map(k => (
-                <td key={k} style={{ padding: '5px 10px', border: '0.5px solid var(--border)' }}>
-                  <TypedValue value={row[k] ?? null} />
-                </td>
+                <th key={k} title={k} style={{
+                  padding: '5px 10px', textAlign: 'left', background: 'var(--gray-light)',
+                  border: '0.5px solid var(--border)', fontFamily: 'var(--font-mono)', fontWeight: '500',
+                  color: 'var(--amber)', width: '170px',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {k}
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {pageRows.map((row, i) => (
+              <tr
+                key={page * ROWS_PER_PAGE + i}
+                onClick={() => setSelectedRow(row)}
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'var(--gray-light)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                {keys.map(k => {
+                  const cellVal = row[k] ?? null
+                  const preview = cellVal === null ? '' : typeof cellVal === 'object' ? JSON.stringify(cellVal) : String(cellVal)
+                  return (
+                    <td key={k} title={preview} style={{
+                      padding: '5px 10px', border: '0.5px solid var(--border)',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      <TypedValue value={cellVal} />
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ fontSize: '10px', color: 'var(--text-faint)', marginTop: '5px' }}>
+        Clique numa linha para ver o registro completo sem truncamento
+      </div>
+
+      {selectedRow && <RowDetailModal row={selectedRow} onClose={() => setSelectedRow(null)} />}
     </div>
   )
 }
@@ -234,23 +344,32 @@ function SectionContent({ section }) {
   return <Field label={section.key} value={value} />
 }
 
-// Layout A — Cards em grade
+// Layout A — Cards em grade.
+// Seções que são tabelas (array de objetos) ocupam a largura TOTAL da grade —
+// espremer uma tabela de 10 colunas num card de 260px é o que causava a
+// aparência de "vazio" no print original. Seções simples continuam em grade.
 function CardLayout({ sections }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px', padding: '16px' }}>
-      {sections.map(s => (
-        <div key={s.key} style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
-          <div style={{ padding: '7px 12px', background: 'var(--gray-light)', borderBottom: '0.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: '500', color: 'var(--amber)' }}>{s.key}</span>
-            <span style={{ fontSize: '10px', color: 'var(--text-faint)' }}>
-              {s.type === 'array' ? `${s.value.length} itens` : s.type === 'object' ? `${Object.keys(s.value).length} chaves` : s.type}
-            </span>
+      {sections.map(s => {
+        const isWideTable = s.type === 'array' && isArrayOfObjects(s.value)
+        return (
+          <div key={s.key} style={{
+            background: 'var(--surface)', border: '0.5px solid var(--border)', borderRadius: 'var(--radius-md)', overflow: 'hidden',
+            gridColumn: isWideTable ? '1 / -1' : 'auto',
+          }}>
+            <div style={{ padding: '7px 12px', background: 'var(--gray-light)', borderBottom: '0.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: '500', color: 'var(--amber)' }}>{s.key}</span>
+              <span style={{ fontSize: '10px', color: 'var(--text-faint)' }}>
+                {s.type === 'array' ? `${s.value.length} itens` : s.type === 'object' ? `${Object.keys(s.value).length} chaves` : s.type}
+              </span>
+            </div>
+            <div style={{ padding: '12px' }}>
+              <SectionContent section={s} />
+            </div>
           </div>
-          <div style={{ padding: '12px' }}>
-            <SectionContent section={s} />
-          </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

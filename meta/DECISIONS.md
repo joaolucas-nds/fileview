@@ -132,3 +132,29 @@ A cada `git push` para `main`, o GitHub builda e deploya automaticamente. URL do
 - **Solução:** Injetar `__dataIdx` em cada linha do `filtered`. `editCell` guarda `{ dataIdx, col }`. `commitEdit` opera sobre `data.map((r, i) => i === dataIdx ? ... : r)`.
 - **Bônus:** botão ✕ cancelar edição com `onMouseDown + preventDefault` (dispara antes do `onBlur`). → Armadilha #5 CONTEXT.md.
 - **Arquivo:** `src/viewers/CsvViewer.jsx`
+
+---
+
+## DEC-008 — Tabelas grandes: truncamento + paginação + modal de detalhe
+**Data:** 2026-07-01 · **Status:** aceita
+
+### Contexto
+O ArrayTable do JSON Formulário renderizava todas as linhas e colunas sem limite de largura. Com dados reais (162 linhas, 10 colunas, coluna `text_content` com centenas de caracteres por célula), o resultado era ilegível: linhas esticadas verticalmente pelo texto longo, e no layout Cards a tabela ficava espremida num card de 260px mostrando só 1-2 colunas.
+
+Pesquisado o padrão usado por ferramentas profissionais de dados em tabela (Airtable, Notion database view, AG Grid, enterprise data tables): a combinação recorrente é truncamento de célula com ellipsis + paginação + expansão do registro completo ao clicar.
+
+### Decisão
+Três mudanças combinadas no `ArrayTable`:
+1. `table-layout: fixed` + largura fixa por coluna (170px) + `overflow: hidden; text-overflow: ellipsis; white-space: nowrap` em cada célula. Tooltip nativo via atributo `title` mostra o valor completo no hover.
+2. Paginação client-side de 20 linhas por página (`ROWS_PER_PAGE`), com controles ◀ ▶ e contador de posição.
+3. Clique na linha abre `RowDetailModal`: overlay com o registro completo, campo por campo, sem truncamento (`white-space: pre-wrap`).
+
+No `CardLayout`, seções que são arrays de objetos (tabelas) ganham `gridColumn: 1 / -1` — ocupam a largura inteira da grade em vez de competir por espaço com cards de campos simples.
+
+### Alternativas consideradas
+- **Wrap de texto na célula (sem truncar)** — a linha cresce verticalmente sem limite; volta ao problema original com qualquer célula de texto longo
+- **Virtualização de linhas (react-window)** — resolve performance de milhares de linhas, mas é complexidade desnecessária para o volume atual (centenas, não dezenas de milhares); paginação simples já resolve
+- **Limitar colunas visíveis com seletor de colunas** — mais próximo de ferramentas como Airtable, mas é feature maior; fica registrado em IDEAS para o futuro
+
+### Consequências
+`ArrayTable` sempre renderiza no máximo 20 linhas × N colunas de uma vez, com altura de linha previsível. Arrays com uma única coluna de texto longo (o caso que gerou este DEC) ficam totalmente legíveis. Custo: o valor completo de uma célula exige um clique a mais (abrir o modal) — aceitável, pois a maioria das inspeções é por linha completa, não por célula isolada.
