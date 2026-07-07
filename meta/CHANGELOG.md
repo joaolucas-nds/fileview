@@ -2,10 +2,21 @@
 
 > Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/) + [SemVer](https://semver.org/lang/pt-BR/).
 > Entradas novas no topo. Só o que foi de fato concluído/entregue.
+> Nota: mudanças no sistema de documentação (`meta/`, CEREBRO.md, ASU) NÃO entram aqui — este arquivo é sobre o PRODUTO (Fileview), não sobre o processo de trabalho. Ver DECISIONS.md para decisões de processo (ex.: DEC-009).
 
 ---
 
 ## [Não lançado]
+
+---
+
+## [0.1.4] — 2026-07-07
+### Adicionado
+- **JSON Formulário — edição inline dos campos:** os campos primitivos renderizados por `Field` (usados nos 3 layouts — Cards, Tabs, Painel) agora são editáveis com duplo clique, no mesmo padrão já usado pela Árvore (input inline, Enter confirma, Esc cancela). Reaproveita o `handleUpdate` existente no componente principal do `JsonViewer` — o caminho (`path` dotted) é resolvido em `SectionContent` conforme a seção é um objeto (`chave.campo`) ou um valor solto no nível raiz (`chave`).
+
+### Fora do escopo desta versão (registrado em IDEAS/STATUS)
+- Edição inline dentro do `RowDetailModal` (registro completo do ArrayTable) continua pendente.
+- Edição inline nas células do `ArrayTable` (tabela de arrays de objetos) continua pendente.
 
 ---
 

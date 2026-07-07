@@ -154,17 +154,66 @@ function TypedValue({ value }) {
   )
 }
 
-// Campo label + valor
-function Field({ label, value }) {
+// Campo label + valor. Edição inline (2026-07-07): duplo clique no valor primitivo
+// abre um input (mesmo padrão da Árvore) — Enter confirma via `onUpdate(path, valor)`,
+// Esc cancela. `path` é a chave dotted (ex.: "user.address.city") resolvida pelo
+// chamador (SectionContent) e repassada até aqui; sem `path`/`onUpdate` o campo
+// permanece read-only (usado, por ex., por chamadores que ainda não repassam isso).
+function Field({ label, value, path, onUpdate }) {
   const type = value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value
   const isPrimitive = ['string', 'number', 'boolean', 'null'].includes(type)
+  const canEdit = isPrimitive && !!onUpdate && !!path
+  const [editing, setEditing] = useState(false)
+  const [editVal, setEditVal] = useState('')
+
+  const startEdit = () => {
+    if (!canEdit) return
+    setEditVal(type === 'string' ? value : String(value))
+    setEditing(true)
+  }
+
+  // Converte o texto digitado de volta pro tipo original antes de gravar
+  const commitEdit = () => {
+    setEditing(false)
+    let parsed
+    if (type === 'number') parsed = Number(editVal)
+    else if (type === 'boolean') parsed = editVal === 'true'
+    else if (type === 'null') parsed = null
+    else parsed = editVal
+    onUpdate(path, parsed)
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
       <span style={{ fontSize: '11px', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>{label}</span>
       {isPrimitive ? (
-        <div style={{ background: 'var(--gray-light)', border: '0.5px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '3px 8px' }}>
-          <TypedValue value={value} />
-        </div>
+        editing ? (
+          <input
+            autoFocus
+            value={editVal}
+            onChange={e => setEditVal(e.target.value)}
+            onBlur={commitEdit}
+            onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditing(false) }}
+            style={{
+              fontSize: '12px', fontFamily: 'var(--font-mono)',
+              border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)',
+              padding: '3px 8px', background: 'var(--accent-light)',
+              color: 'var(--text)', outline: 'none', width: '100%',
+            }}
+          />
+        ) : (
+          <div
+            onDoubleClick={startEdit}
+            title={canEdit ? 'Duplo clique para editar' : undefined}
+            style={{
+              background: 'var(--gray-light)', border: '0.5px solid var(--border)',
+              borderRadius: 'var(--radius-sm)', padding: '3px 8px',
+              cursor: canEdit ? 'text' : 'default',
+            }}
+          >
+            <TypedValue value={value} />
+          </div>
+        )
       ) : (
         <span style={{ fontSize: '11px', color: 'var(--text-faint)', fontStyle: 'italic', padding: '3px 0' }}>
           {type === 'array' ? `[ ${value.length} itens ]` : `{ ${Object.keys(value).length} chaves }`}
@@ -185,6 +234,8 @@ const pageBtn = (disabled) => ({
 // Modal de detalhe — mostra o registro completo sem truncamento, campo por campo.
 // Resolve o caso de tabelas com colunas de texto longo (ex: text_content):
 // a tabela trunca com ellipsis, o clique na linha revela o valor inteiro.
+// (Ainda read-only — edição inline aqui é ideia registrada em IDEAS 2026-07-01,
+// fora do escopo desta sessão.)
 function RowDetailModal({ row, onClose }) {
   return (
     <div
@@ -328,27 +379,32 @@ function PrimitiveList({ value }) {
   )
 }
 
-// Conteúdo de seção — compartilhado pelos 3 layouts
-function SectionContent({ section }) {
-  const { value, type } = section
+// Conteúdo de seção — compartilhado pelos 3 layouts.
+// `onUpdate` (opcional) é repassado ao Field com o `path` dotted certo:
+// seção primitiva solta → path = section.key; seção objeto → path = "section.key.campo".
+// Arrays (tabela ou chips) ainda não recebem edição inline nesta sessão.
+function SectionContent({ section, onUpdate }) {
+  const { value, type, key } = section
   if (type === 'array') {
     return isArrayOfObjects(value) ? <ArrayTable value={value} /> : <PrimitiveList value={value} />
   }
   if (type === 'object') {
     return (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
-        {Object.entries(value).map(([k, v]) => <Field key={k} label={k} value={v} />)}
+        {Object.entries(value).map(([k, v]) => (
+          <Field key={k} label={k} value={v} path={`${key}.${k}`} onUpdate={onUpdate} />
+        ))}
       </div>
     )
   }
-  return <Field label={section.key} value={value} />
+  return <Field label={section.key} value={value} path={section.key} onUpdate={onUpdate} />
 }
 
 // Layout A — Cards em grade.
 // Seções que são tabelas (array de objetos) ocupam a largura TOTAL da grade —
 // espremer uma tabela de 10 colunas num card de 260px é o que causava a
 // aparência de "vazio" no print original. Seções simples continuam em grade.
-function CardLayout({ sections }) {
+function CardLayout({ sections, onUpdate }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px', padding: '16px' }}>
       {sections.map(s => {
@@ -365,7 +421,7 @@ function CardLayout({ sections }) {
               </span>
             </div>
             <div style={{ padding: '12px' }}>
-              <SectionContent section={s} />
+              <SectionContent section={s} onUpdate={onUpdate} />
             </div>
           </div>
         )
@@ -375,7 +431,7 @@ function CardLayout({ sections }) {
 }
 
 // Layout B — Tabs
-function TabLayout({ sections }) {
+function TabLayout({ sections, onUpdate }) {
   const [activeIdx, setActiveIdx] = useState(0)
   const active = sections[activeIdx]
   return (
@@ -390,14 +446,14 @@ function TabLayout({ sections }) {
         ))}
       </div>
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
-        {active && <SectionContent section={active} />}
+        {active && <SectionContent section={active} onUpdate={onUpdate} />}
       </div>
     </div>
   )
 }
 
 // Layout C — Painel lateral
-function PanelLayout({ sections }) {
+function PanelLayout({ sections, onUpdate }) {
   const [activeKey, setActiveKey] = useState(sections[0]?.key)
   const active = sections.find(s => s.key === activeKey) || sections[0]
   return (
@@ -416,7 +472,7 @@ function PanelLayout({ sections }) {
         <div style={{ fontSize: '11px', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {active?.key}
         </div>
-        {active && <SectionContent section={active} />}
+        {active && <SectionContent section={active} onUpdate={onUpdate} />}
       </div>
     </div>
   )
@@ -429,7 +485,7 @@ const FORM_LAYOUTS = [
   { key: 'painel', label: 'Painel' },
 ]
 
-function FormView({ data }) {
+function FormView({ data, onUpdate }) {
   const [layout, setLayout] = useState(() => {
     try { return localStorage.getItem('fv-json-layout') || 'cards' } catch { return 'cards' }
   })
@@ -457,11 +513,14 @@ function FormView({ data }) {
             cursor: 'pointer',
           }}>{l.label}</button>
         ))}
+        <span style={{ fontSize: '10px', color: 'var(--text-faint)', marginLeft: 'auto' }}>
+          Duplo clique num campo para editar
+        </span>
       </div>
       <div style={{ flex: 1, overflow: 'hidden' }}>
-        {layout === 'cards' && <div style={{ height: '100%', overflowY: 'auto' }}><CardLayout sections={sections} /></div>}
-        {layout === 'tabs' && <TabLayout sections={sections} />}
-        {layout === 'painel' && <PanelLayout sections={sections} />}
+        {layout === 'cards' && <div style={{ height: '100%', overflowY: 'auto' }}><CardLayout sections={sections} onUpdate={onUpdate} /></div>}
+        {layout === 'tabs' && <TabLayout sections={sections} onUpdate={onUpdate} />}
+        {layout === 'painel' && <PanelLayout sections={sections} onUpdate={onUpdate} />}
       </div>
     </div>
   )
@@ -510,7 +569,7 @@ export default function JsonViewer() {
       )
     }
     return parsed !== null
-      ? <FormView data={parsed} />
+      ? <FormView data={parsed} onUpdate={handleUpdate} />
       : <div style={{ padding: '24px', color: 'var(--text-faint)', fontSize: '13px' }}>Arquivo vazio.</div>
   }
 

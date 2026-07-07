@@ -5,6 +5,14 @@
 > As Instruções do Projeto trazem uma versão curta deste arquivo, lida em toda mensagem.
 > **Você pode adaptar as Instruções do Projeto a ESTE projeto.** A versão que o kit gera é ponto de partida, não contrato: se fizer sentido, proponha encurtar, trocar exemplos, remover um princípio que não se aplica aqui ou acrescentar uma regra específica deste projeto — sempre respeitando o teto de caracteres (elas são lidas em toda mensagem, cada palavra custa). Registre a mudança no DECISIONS e na seção «Feedback para o Kit» do IDEAS.
 
+> **Mudanças nesta revisão (2026-07-03 — adoção da atualização do KCM):**
+> - Arquivo `HISTORICO.md` renomeado para `HISTORY.md` (alinha com a convenção "nomes de arquivo em inglês" que o projeto já segue; o próprio template novo usa esse nome). Apague o `HISTORICO.md` antigo do Projeto depois de subir o `HISTORY.md`.
+> - Nova seção **"Recomendação de configuração (fim de sessão)"** — o assistente passa a recomendar modelo/esforço/pensamento para a próxima etapa.
+> - Cláusula de auto-criação de arquivo refinada: só cria automaticamente os arquivos da **camada universal** (STATUS, IDEAS, DECISIONS); arquivos de nicho (CHANGELOG, ROADMAP) não são forçados se o projeto não os usa.
+> - Seção **"Saída de código via ASU"** reescrita: distingue edição de arquivo existente (patch `.yaml` para baixar) de arquivo NOVO (arquivo inteiro para baixar, nunca embutido em YAML); formaliza os 3 grupos de escopo do ASU (código/doc de heading estável · capítulo longo · doc rolante sempre inteiro); acrescenta cuidado com âncoras não-ASCII.
+> - **Nomenclatura de ASU — pendência resolvida em 2026-07-07:** o kit sugere `AAMMDD-asuNNNN.yaml`; o projeto usava `AAAA-MM-DD_NNN_descricao.yaml` desde 2026-06-27. Você decidiu migrar para o padrão do kit — a seção "Saída de código via ASU" abaixo já reflete `AAMMDD-asuNNNN.yaml` como convenção vigente. Ver a atualização em DEC-009 (DECISIONS.md) para o trade-off (perde a descrição no nome) e o histórico da decisão.
+> Ver DEC-009 em DECISIONS.md para o registro completo desta atualização.
+
 ---
 
 ## Ritual de início de sessão
@@ -95,7 +103,7 @@ Cada arquivo tem um papel e um comportamento temporal distinto. **Respeite o pap
 | `LOG-TEMPLATE.md` | Referência fixa | Modelo do log de sessão. Referência fixa — nunca substituído pelo conteúdo preenchido. |
 | `ROADMAP.md` | Plano em fases | OPCIONAL — plano deliberado de evolução em fases. Use quando o projeto tem direção de médio/longo prazo. |
 | `GLOSSARY.md` | Estável | OPCIONAL — termos próprios do projeto. Use quando há jargão que se repete entre sessões. |
-| `HISTORICO.md` | Cresce (histórico) | OPCIONAL — conhecimento consolidado de fases antigas (guias, análises que não cabem no CONTEXT enxuto). Lido sob demanda. |
+| `HISTORY.md` | Cresce (histórico) | OPCIONAL — conhecimento consolidado de fases antigas (guias, análises que não cabem no CONTEXT enxuto). Lido sob demanda. *(Renomeado de HISTORICO.md em 2026-07-03 — ver DEC-009.)* |
 | `logs/AAAA-MM-DD.md` | Histórico | Ao final de cada sessão (formato em LOG-TEMPLATE). |
 
 ## Regras de higiene (impedem inchaço e duplicação)
@@ -129,6 +137,8 @@ Quando a entrega inclui arquivos que vão para um repositório Git/GitHub (códi
 
 > Se o seu sistema operacional estiver definido acima, cada comando já vem na sintaxe certa do seu shell (ex.: no CMD do Windows, comando numa linha só, `-m` repetido para parágrafos e mensagem SEM acentos, que o CMD corrompe). Para mudanças triviais, basta o título; para várias mudanças de naturezas diferentes, o assistente pode sugerir mais de um commit.
 
+- **Artefatos de repo (.gitignore, README):** em projeto com repositório, o `.gitignore` sai na primeira leva que cria estrutura (adequado ao stack) e o `README.md` é entregue/atualizado quando a estrutura estabiliza (não no rascunho, para não nascer velho). O assistente gera por previsão, sem pedir permissão a cada vez; se adiar o README, diz por quê. *(Neste projeto ambos já existem desde a F1 — regra relevante só se algo for recriado do zero.)*
+
 ### Canal de atualização do kit
 
 Este projeto foi montado com o Kit de Contexto. O Kit evolui — novos princípios, templates refinados, regras novas. Quando você trouxer uma atualização do Kit para esta conversa, o assistente deve reconhecê-la e aplicá-la daqui em diante.
@@ -136,7 +146,7 @@ Este projeto foi montado com o Kit de Contexto. O Kit evolui — novos princípi
 - Se eu colar (ou subir) um bloco/arquivo marcado como **atualização do Kit** — por exemplo um trecho de CHANGELOG do Kit, um princípio novo, ou um template revisado —, trate-o como instrução para os próximos outputs desta conversa, sem que eu precise recriar o projeto do zero.
 - Ao receber uma atualização, faça um resumo de 1-3 linhas do que mudou e como isso afeta este projeto, e só então passe a aplicar — para eu confirmar que entendeu certo.
 - Atualização de TEMPLATE: ao gerar a próxima versão do arquivo afetado, use o formato novo, preservando o conteúdo específico já existente deste projeto (não sobrescreva meus dados com o exemplo em branco do template).
-- Atualização de REGRA/PRINCÍPIO: incorpore ao comportamento daqui pra frente; se contradisser algo deste CEREBRO.md, aponte o conflito e me pergunte qual vale, em vez de decidir sozinho.
+- Atualização de REGRA/PRINCÍPIO: incorpore ao comportamento daqui pra frente; se contradisser algo deste CEREBRO.md, aponte o conflito e me pergunte qual vale, em vez de decidir sozinho. *(Foi o caso da nomenclatura de ASU nesta atualização — ver DEC-009.)*
 - Ao integrar uma atualização do sistema/Kit num projeto já montado, PRESERVE a estrutura que já existe (nichos, docs e decisões específicas deste projeto): adapte só as camadas universal/transversal (princípios, protocolo, gatilhos). Antes de mudar, mostre em lista curta o que vai alterar, para eu aprovar — não reescreva o projeto.
 - Feedback opcional: se eu pedir, resuma em um parágrafo o que ESTE projeto criou ou aperfeiçoou além do Kit (no nicho, na parte universal, ou num princípio) que valha levar de volta ao Kit. Sem pedido, não gera esse relatório — mantém o foco em integrar a atualização e seguir o trabalho.
 - Na dúvida sobre se algo é uma atualização do Kit ou conteúdo do projeto, pergunte.
@@ -175,7 +185,7 @@ Pense na janela de contexto como a memória RAM: rápida, finita, zerada a cada 
 | Mudança de fase do projeto | Entrega o ROADMAP.md completo com a fase atualizada (concluída / em curso / próxima). |
 | Termo técnico próprio do projeto usado | Entrega o GLOSSARY.md completo com o termo definido. |
 
-> Se um arquivo referenciado pelas regras acima (IDEAS, DECISIONS, etc.) ainda não existir no projeto, o assistente o CRIA na primeira necessidade — a partir do papel descrito e do modelo do kit — em vez de tratar a ausência como erro ou adiar a captura.
+> Se um arquivo da **camada universal** (STATUS, IDEAS, DECISIONS) referenciado acima ainda não existir, o assistente o CRIA na primeira necessidade, a partir do papel descrito. **Arquivos de outros nichos (CHANGELOG, ROADMAP, etc.) que NÃO fazem parte deste nicho não são criados** — a ausência é intencional, não um erro. *(Não é o caso deste projeto: usamos todos os arquivos da lista.)*
 
 ## Ao final de cada sessão, o assistente entrega (como arquivos completos)
 
@@ -215,13 +225,25 @@ O usuário trabalha em **Windows (CMD/Prompt de Comando)**. Qualquer comando de 
 
 Respostas em pt-BR, incluindo comentários quando houver código.
 
+## Recomendação de configuração (fim de sessão)
+
+No fim de cada sessão, junto do resumo e de qualquer dúvida, avalie o que a **próxima etapa** exige e recomende a configuração de forma **completa e explícita**. Os controles dependem de ONDE se trabalha:
+- **No chat (claude.ai):** **modelo** (recomende pela capacidade — o mais capaz vs. um mais leve —, não pelo nome/versão, que muda), **esforço** (Baixo→Máximo) e **pensamento** (ligado/desligado): três controles independentes.
+- **No Claude Code (CLI/desktop):** **modelo** + **nível de esforço** (`/effort` baixo→máximo, ou `xhigh`/`ultracode` onde houver). **Não há toggle de pensamento** no Code — ele é acoplado ao esforço; para um turno difícil pontual, use `ultrathink` no prompt. Nunca recomende "ligar o pensamento" no Code.
+- **Nunca afirme saber a configuração atual** — ela não é legível de forma confiável. Recomende pela TAREFA e pela config que o usuário declarou.
+- Próxima etapa **pesada** + config provável fraca → **pare e peça o aumento, nomeando os níveis exatos**.
+- Etapa atual **leve** mas config **alta** → **não pare no meio**; termine e, no fim, sinalize "pode baixar para X na próxima".
+- É um **default recomendado**, não proibição — cabe sob a válvula de desvio registrado.
+
 ## Saída de código via ASU (patch)
 
-Este projeto entrega mudanças de código como instrução do **Atualizador Automático de Scripts (ASU)** — não arquivos inteiros. Pré-requisito: o `INSTRUCTION_GUIDE.md` está no conhecimento do Projeto e a ferramenta ASU está instalada.
+Este projeto usa o **Atualizador Automático de Scripts (ASU)** para **alterar arquivos existentes** — entregue UMA instrução `yaml` (patch cirúrgico) **para baixar**, não arquivos inteiros. Para **arquivos NOVOS**, entregue o arquivo **pronto para baixar** (não embuta o arquivo inteiro num bloco YAML — arrisca corromper no escape), **exceto** quando a criação faz parte de uma instrução que também edita existentes (operação atômica) — aí use `create_file` na mesma instrução. Pré-requisito: `INSTRUCTION_GUIDE.md` e `PROMPT_IA.md` estão no conhecimento do Projeto (pasta `meta/`) e o ASU está instalado.
 
-1. Ao pedir uma "instrução ASU" (ou ao alterar arquivos existentes), responda com **UM bloco `yaml`** cujo `format_version` é o declarado no `INSTRUCTION_GUIDE.md` do Projeto (não fixe um número aqui — o guia é o contrato) e uma linha final com `python -m src apply instrucao.yaml --root <RAIZ> --dry-run`. Nunca XML; nunca arquivos soltos.
-2. Prefira edições **cirúrgicas** (`replace_function`/`replace_method`/`replace_section`/`set_json_path`); para JS e outras linguagens, `type: "text"` + `replace_context_block` com âncoras copiadas **literalmente do arquivo real** (indentação exata), casando **uma única vez** — só o miolo no `new_content`.
-3. Não invente campos nem use número de linha; o `INSTRUCTION_GUIDE.md` é a referência obrigatória do formato.
-4. **Verificação (sessão seguinte):** se você emitiu uma instrução ASU e os arquivos do projeto estão à vista, confira no disco cada arquivo que ela tocou antes de seguir — não confie em "deu certo".
+1. Ao pedir uma "instrução ASU" (ou ao **editar** arquivos existentes), entregue a instrução **como arquivo `.yaml` para baixar** — não colada no chat: o download preserva os bytes UTF-8 exatos e evita corromper âncoras não-ASCII no copia-e-cola. **Nome — padrão do kit (adotado em 2026-07-07, ver resolução do DEC-009):** `AAMMDD-asuNNNN.yaml` (ex.: `260707-asu0001.yaml`) — data compacta de 6 dígitos + prefixo `asu` + sequência de 4 dígitos, numeração contínua (não reinicia por dia). Trade-off aceito conscientemente: sem descrição no nome, auditar de relance qual ASU faz o quê exige abrir o arquivo. `format_version` igual ao declarado no `INSTRUCTION_GUIDE.md` (não fixe número — o guia é o contrato). Acompanhe de UMA linha: `python -m src apply <arquivo>.yaml --root <RAIZ> --dry-run`. Nunca XML.
+2. **Arquivo NOVO:** entregue-o pronto para baixar — não o reescreva como instrução ASU. Exceção: criação junto de edições a existentes na MESMA instrução → aí `create_file`. (Mesmo numa edição, o usuário pode preferir o arquivo inteiro para baixar — se pedir, respeite.)
+3. **Escopo do ASU (por tipo de arquivo):** (a) **código** e docs de **heading estável** (`DECISIONS.md`, `CONTEXT.md`, `GLOSSARY.md`) → ASU serve (append/troca localizada, âncora inequívoca). (b) **Capítulos / escrita longa:** edição de **trecho localizado** → ASU é até preferível (evita reescrever o capítulo todo e o risco de perder conteúdo no meio); **escrita nova ou reescrita profunda** → arquivo inteiro (não há âncora; é geração). (c) **Docs rolantes** (`STATUS`, `CHANGELOG`, `IDEAS`, `HISTORY` e equivalentes que acumulam por higiene) → **sempre inteiros**: a edição é holística (mover o resolvido, reclassificar, fundir, checar que nada único se perdeu) e um patch cirúrgico briga com a higiene; pior, o diff pode 'bater' e a higiene estar errada, porque o ASU não tem julgamento. Reavalie `DECISIONS.md` via ASU só perto de ~700 linhas. **Verificação obrigatória:** apliquei uma instrução ASU e os arquivos estão à vista? Confira no disco cada arquivo tocado antes de seguir, mesmo sem o usuário pedir — não confie em 'deu certo' (alinhado ao ponto 9 do PROMPT_IA do ASU). *(Esta prática já vinha sendo seguida neste projeto — código sempre via ASU, STATUS/CHANGELOG/IDEAS/ROADMAP sempre inteiros — a atualização apenas formaliza por escrito o que já fazíamos.)*
+4. Prefira edições **cirúrgicas** (`replace_function`/`replace_method`/`replace_section`/`set_json_path`); para JS e outras, `type: "text"` + `replace_context_block` com âncoras copiadas **literalmente** do arquivo real (indentação exata), casando **uma única vez** — só o miolo no `new_content`. Se a âncora tiver caractere não-ASCII (setas, box-drawing, aspas curvas), evite o literal: use `.*` no `pattern` ou prefira uma âncora ASCII vizinha estável.
+5. Não invente campos nem use número de linha; o `INSTRUCTION_GUIDE.md` é a referência obrigatória do formato.
+6. **Verificação (sessão seguinte):** se emitiu uma instrução ASU e os arquivos estão à vista, confira no disco cada arquivo tocado antes de seguir — não confie em "deu certo".
 
 *Gerado pelo Kit de Contexto Universal — nicho Desenvolvimento. Edite à vontade: este arquivo é seu.*

@@ -7,6 +7,7 @@
 
 ## 🟢 F1 — MVP Viewers *(concluída — 2026-06-05)*
 **Objetivo:** Ter pelo menos um viewer funcional para cada formato prioritário, rodando localmente.
+**Critério de conclusão:** Conseguir abrir e visualizar MD, JSON, CSV e PDF sem erros críticos. Build passando.
 - MD: preview (marked), WYSIWYG (Tiptap), fonte (textarea)
 - JSON: árvore interativa com edição inline
 - CSV: tabela com sort, filter, edit, add/delete row
@@ -22,10 +23,10 @@
 - [x] FIX-002: CSV editar via `__dataIdx` original
 - [x] CSV: botão ✕ cancelar edição + botão limpar filtro
 - [x] GitHub Pages: `base: './'` em vite.config.js (DEC-007)
-- [x] Deploy automático via GitHub Actions (`.github/workflows/deploy.yml`)
+- [x] Deploy automático via GitHub Actions (`.github/workflows/deploy.yml`) — confirmado funcionando em produção
 - [x] JSON: modo Formulário — Cards, Tabs e Painel com sub-switcher
 - [x] JSON: UX de tabelas grandes — truncamento, paginação, modal de detalhe (DEC-008)
-- [ ] JSON formulário: edição inline dos campos (atualmente read-only)
+- [x] JSON formulário: edição inline dos campos (Field, nos 3 layouts) — 2026-07-07. RowDetailModal e células do ArrayTable ainda pendentes (ver IDEAS).
 - [ ] CSV: Tab navigation entre células (confirm + mover)
 - [ ] Busca Ctrl+F no SourceEditor (highlight de ocorrências)
 - [ ] Tooltips customizados na toolbar do MD editor

@@ -111,27 +111,8 @@ Duas correções combinadas:
 ### Consequências
 A cada `git push` para `main`, o GitHub builda e deploya automaticamente. URL do deploy aparece no log do Actions e em Settings → Pages.
 
----
-
-## FIX-001 — PDF: ArrayBuffer detachado pelo worker do PDF.js
-**Data:** 2026-06-05
-
-- **Sintoma:** `⚠ Erro ao abrir PDF: Failed to execute 'postMessage' on 'Worker': ArrayBuffer at index 0 is already detached.`
-- **Causa raiz:** PDF.js v4 usa `postMessage` com `transfer` do ArrayBuffer para o worker thread — detacha o buffer do main thread permanentemente. Na remontagem, `activeFile.content` está morto.
-- **Solução:** `AppContext.openFile` converte PDF em Blob URL (`URL.createObjectURL(blob)`). `PdfViewer` passa a URL string para `lib.getDocument(url)`. `closeFile` revoga com `URL.revokeObjectURL`.
-- **Lição:** Nunca armazenar `ArrayBuffer` em estado React quando será transferido para Worker. Blob URLs são imunes. → Armadilha #1 CONTEXT.md.
-- **Arquivos:** `src/context/AppContext.jsx`, `src/viewers/PdfViewer.jsx`
-
----
-
-## FIX-002 — CSV: edição-enquanto-filtrado descartava linhas fora do filtro
-**Data:** 2026-06-05
-
-- **Sintoma:** Filtrar + editar + salvar descartava as linhas fora do filtro.
-- **Causa raiz:** `commitEdit` reconstruía o CSV a partir do array `filtered` (derivado), não do `data` original.
-- **Solução:** Injetar `__dataIdx` em cada linha do `filtered`. `editCell` guarda `{ dataIdx, col }`. `commitEdit` opera sobre `data.map((r, i) => i === dataIdx ? ... : r)`.
-- **Bônus:** botão ✕ cancelar edição com `onMouseDown + preventDefault` (dispara antes do `onBlur`). → Armadilha #5 CONTEXT.md.
-- **Arquivo:** `src/viewers/CsvViewer.jsx`
+### Nota pós-implementação (2026-06-27)
+Mesmo com `deploy.yml` correto e o build passando (verificado no log do Actions: "442 modules transformed... built in 4.21s"), o site continuou em branco por um período — causa: o GitHub Pages tinha ficado preso servindo o conteúdo de uma configuração anterior (cache/CDN antigo de quando talvez tenha sido testado "Deploy from a branch"). Console mostrava 404 em `/src/main.jsx` — sintoma de estar servindo o `index.html` do CÓDIGO-FONTE, não o `index.html` do `dist/` buildado. **Solução aplicada:** em Settings → Pages, alternar Source de "GitHub Actions" para "Deploy from a branch" e IMEDIATAMENTE de volta para "GitHub Actions", depois disparar `workflow_dispatch` manual na aba Actions. Isso forçou um novo ciclo de publicação e resolveu. Lição: se o site ficar em branco MESMO com o workflow verde, suspeitar de cache do Pages preso, não assumir que o workflow está errado.
 
 ---
 
@@ -158,3 +139,67 @@ No `CardLayout`, seções que são arrays de objetos (tabelas) ganham `gridColum
 
 ### Consequências
 `ArrayTable` sempre renderiza no máximo 20 linhas × N colunas de uma vez, com altura de linha previsível. Arrays com uma única coluna de texto longo (o caso que gerou este DEC) ficam totalmente legíveis. Custo: o valor completo de uma célula exige um clique a mais (abrir o modal) — aceitável, pois a maioria das inspeções é por linha completa, não por célula isolada.
+
+---
+
+## DEC-009 — Adoção da atualização do Kit de Contexto Universal (KCM) de 2026-07-03
+**Data:** 2026-07-03 · **Status:** aceita (com uma pergunta em aberto para o usuário)
+
+### Contexto
+O KCM — o kit de templates que gera e mantém `meta/CEREBRO.md` e os demais docs de contexto deste projeto — recebeu uma atualização (arquivos `*__template-update.md`/`.txt` subidos ao Projeto). Pedido do usuário: ler, comparar, estudar, adaptar e atualizar o projeto, e gerar uma versão atualizada das Instruções do Projeto.
+
+Comparação feita linha a linha entre `CEREBRO.md` (versão em uso, 227 linhas) e `CEREBRO__template-update.md` (versão nova, 240 linhas), e entre as Instruções do Projeto em uso e `instrucoes-dev__template-update.txt`.
+
+### Decisão
+Mesclar as mudanças do kit preservando 100% das customizações específicas do Fileview (referência ao `INSTRUCTION_GUIDE.md`/`PROMPT_IA.md` próprios, ambiente Windows/CMD, a lista real de arquivos `meta/` deste projeto). Mudanças adotadas sem ressalva:
+
+1. **Renomear `HISTORICO.md` → `HISTORY.md`.** O nome novo já é o que o template usa, e alinha com a convenção do próprio projeto ("nomes de arquivo em inglês") que `HISTORICO.md` já vinha violando desde o início. Conteúdo preservado integralmente, só o nome muda; todas as referências cruzadas (CEREBRO.md, Instruções do Projeto, tabela "Como manter os documentos") atualizadas.
+2. **Nova seção "Recomendação de configuração (fim de sessão)"** no CEREBRO.md — o assistente passa a recomendar explicitamente modelo/esforço/pensamento (no chat) ou modelo/`/effort` (no Claude Code) para a próxima etapa, ao fim de cada sessão.
+3. **Cláusula de auto-criação de arquivo refinada** na Tabela de Gatilhos — antes, qualquer arquivo referenciado e ausente era criado automaticamente; agora só os da "camada universal" (STATUS, IDEAS, DECISIONS) são criados por padrão, arquivos de nicho (CHANGELOG, ROADMAP) não são forçados se o projeto não os usa. Não muda nada na prática para o Fileview (usamos todos os arquivos da lista), mas o comportamento fica mais correto para o caso geral.
+4. **Seção "Saída de código via ASU" reescrita**, incorporando: (a) distinção explícita entre editar arquivo existente (patch `.yaml` para baixar) vs. criar arquivo NOVO (entregar pronto para baixar, nunca embutido dentro de um bloco YAML — risco de corromper no escape de caracteres); (b) formalização dos 3 grupos de escopo do ASU — código/doc de heading estável → ASU serve; capítulo longo → ASU para trecho localizado, arquivo inteiro para reescrita profunda; **docs rolantes (STATUS/CHANGELOG/IDEAS/HISTORY) → SEMPRE arquivo inteiro**, nunca patch; (c) cuidado com âncoras não-ASCII (setas, aspas curvas, box-drawing) em `before`/`after` — preferir `.*` ou âncora ASCII vizinha. **Este ponto (c) já era uma prática existente no `INSTRUCTION_GUIDE.md` do projeto (§4.7), então não é novidade real para o Fileview — só ficou também espelhado no CEREBRO.md.** O ponto (b) formaliza por escrito uma prática que este projeto já seguia na prática (nunca usei ASU para STATUS/CHANGELOG/IDEAS/ROADMAP, sempre arquivo inteiro).
+
+### Conflito identificado — NÃO resolvido sozinho, decisão pendente do usuário
+O template novo sugere nomear os ASUs como `AAMMDD-asuNNNN.yaml` (ex.: `260701-asu0001.yaml` — data compacta de 6 dígitos + prefixo `asu` + sequência de 4 dígitos, sem descrição no nome).
+
+Este projeto já tem uma convenção **estabelecida por pedido explícito do usuário** em 2026-06-27 ("utilize de identificadores e prename para nomear as instruções para organização e auditar, algo como a data e talvez uma numeração"): `AAAA-MM-DD_NNN_descricao.yaml` (ex.: `2026-07-01_001_json-table-ux.yaml`), já usada em 3 ASUs reais desta conversa.
+
+**Decisão tomada nesta sessão:** manter a convenção do projeto como padrão, por dois motivos — (1) foi um pedido explícito e recente do próprio usuário, não uma escolha arbitrária minha; (2) inclui uma descrição no nome do arquivo, o que é estritamente mais útil para auditoria de relance (o padrão do kit exige abrir o arquivo ou consultar um índice externo para saber o que ele faz). Isso é registrado como um **desvio deliberado do kit** (válvula de desvio registrado, conforme a própria regra de higiene do CEREBRO.md).
+
+**Pergunta em aberto para o usuário:** confirmar se quer manter a convenção do projeto (recomendado) ou migrar para o padrão do kit `AAMMDD-asuNNNN.yaml`. Enquanto não houver resposta, os próximos ASUs deste projeto continuam usando `AAAA-MM-DD_NNN_descricao.yaml`.
+
+### Alternativas consideradas (para a adoção do kit como um todo)
+- **Ignorar a atualização do kit** — descartada: aumentaria a divergência entre este projeto e o kit ao longo do tempo, perdendo melhorias genuínas (ex.: a recomendação de configuração é útil e não tinha custo de adoção).
+- **Resetar `CEREBRO.md` para o template novo por completo** — descartada: destruiria customizações já testadas e funcionando deste projeto especificamente (nomenclatura de ASU, referências a `INSTRUCTION_GUIDE.md`/`PROMPT_IA.md`, notas de ambiente Windows/CMD).
+
+### Consequências
+`CEREBRO.md` cresce de 227 para ~245 linhas. Comportamento muda a partir de agora: recomendação de configuração ao fim de cada sessão; distinção mais clara entre ASU-patch e arquivo-novo-para-baixar; `HISTORICO.md` deixa de existir no Projeto (deletar depois de subir `HISTORY.md`, para não haver duas fontes). Nenhuma mudança de comportamento do PRODUTO (código do Fileview) decorre desta decisão — é puramente sobre como as sessões de trabalho são conduzidas e documentadas.
+
+### Resolução da pergunta em aberto (2026-07-07)
+Você decidiu migrar para o padrão sugerido pelo kit: `AAMMDD-asuNNNN.yaml` (data compacta de 6 dígitos + prefixo `asu` + sequência de 4 dígitos), abandonando a convenção própria do projeto `AAAA-MM-DD_NNN_descricao.yaml` usada nos 3 ASUs anteriores (`2026-06-28_001_json-form-view.yaml`, `2026-07-01_001_json-table-ux.yaml`, e um anterior de atualização do Node). A partir desta sessão, novos ASUs usam o nome novo — o primeiro é `260707-asu0001.yaml`.
+
+**Trade-off que fica registrado, não escondido:** o padrão do kit não carrega descrição no nome do arquivo. Auditar de relance qual ASU faz o quê (sem abrir o YAML ou manter um índice à parte) fica mais difícil do que era com o nome descritivo antigo — era exatamente a vantagem que motivou a convenção anterior (ver acima). A contagem `NNNN` reinicia a partir de `0001` sob o novo padrão (não continua a sequência `001/001/001` por dia do padrão antigo, que tinha reinício diário e não global).
+
+### Consequências (atualização)
+`meta/CEREBRO.md` e `PROJECT_INSTRUCTIONS.md` precisam ser atualizados na próxima leva para refletir `AAMMDD-asuNNNN.yaml` como convenção vigente (a nota "Mudanças nesta revisão" e a seção "Saída de código via ASU" ainda citam o padrão antigo como escolha do projeto — ficou pendente de ajuste, ver STATUS.md). Nenhum ASU antigo precisa ser renomeado retroativamente.
+
+---
+
+## FIX-001 — PDF: ArrayBuffer detachado pelo worker do PDF.js
+**Data:** 2026-06-05
+
+- **Sintoma:** `⚠ Erro ao abrir PDF: Failed to execute 'postMessage' on 'Worker': ArrayBuffer at index 0 is already detached.`
+- **Causa raiz:** PDF.js v4 usa `postMessage` com `transfer` do ArrayBuffer para o worker thread — detacha o buffer do main thread permanentemente. Na remontagem, `activeFile.content` está morto.
+- **Solução:** `AppContext.openFile` converte PDF em Blob URL (`URL.createObjectURL(blob)`). `PdfViewer` passa a URL string para `lib.getDocument(url)`. `closeFile` revoga com `URL.revokeObjectURL`.
+- **Lição:** Nunca armazenar `ArrayBuffer` em estado React quando será transferido para Worker. Blob URLs são imunes. → Armadilha #1 CONTEXT.md.
+- **Arquivos:** `src/context/AppContext.jsx`, `src/viewers/PdfViewer.jsx`
+
+---
+
+## FIX-002 — CSV: edição-enquanto-filtrado descartava linhas fora do filtro
+**Data:** 2026-06-05
+
+- **Sintoma:** Filtrar + editar + salvar descartava as linhas fora do filtro.
+- **Causa raiz:** `commitEdit` reconstruía o CSV a partir do array `filtered` (derivado), não do `data` original.
+- **Solução:** Injetar `__dataIdx` em cada linha do `filtered`. `editCell` guarda `{ dataIdx, col }`. `commitEdit` opera sobre `data.map((r, i) => i === dataIdx ? ... : r)`.
+- **Bônus:** botão ✕ cancelar edição com `onMouseDown + preventDefault` (dispara antes do `onBlur`). → Armadilha #5 CONTEXT.md.
+- **Arquivo:** `src/viewers/CsvViewer.jsx`
