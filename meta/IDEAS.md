@@ -17,11 +17,8 @@ A tabela atual funciona mas não é fluida como planilha real. Melhorias desejad
 ### 2026-07-01 — ArrayTable: seletor de colunas visíveis
 Para tabelas com muitas colunas (10+), permitir esconder/mostrar colunas via um menu "Colunas" — padrão usado por Airtable e Notion database view. Reduz a necessidade de scroll horizontal quando nem todas as colunas importam para a inspeção atual. Ficou de fora do DEC-008 por ser escopo maior; registrar aqui para retomar se o caso de uso aparecer de novo.
 
-### 2026-07-01 — RowDetailModal: edição inline
-Hoje o modal de registro completo (ArrayTable) é read-only. Com a edição inline dos campos do FormView já implementada em 2026-07-07 (ver Concluídas), este é o próximo passo natural: estender o mesmo padrão (double-click + Enter/Esc) para dentro do modal — precisa resolver o `path` até o campo dentro do array (índice original da linha + nome da coluna), diferente do path do Field solto.
-
-### 2026-07-07 — ArrayTable: edição inline nas células
-Ficou de fora da sessão de edição inline do FormView (2026-07-07) por ser escopo maior: cada célula precisa saber o índice ORIGINAL da linha no array (não a posição pós-paginação/filtro — mesma classe de cuidado do FIX-002 no CSV) para montar o `path` correto. Registrar aqui para atacar junto com o RowDetailModal, já que os dois mexem na mesma estrutura de dados (linha de um array de objetos).
+### 2026-07-07 — PrimitiveList (arrays de primitivos): edição inline
+Arrays simples (chips) no FormView continuam read-only — a edição inline nesta sessão cobriu Field, ArrayTable e RowDetailModal, mas não os chips de `PrimitiveList`. Escopo pequeno (cada chip é um valor primitivo isolado, sem a complexidade de índice-original de linha de tabela), mas ficou de fora para não estender ainda mais a sessão 2. Path seria `${section.key}.${índice}` diretamente.
 
 ### 2026-06-05 — JSON: botão "copiar caminho" por nó
 Em cada nó da árvore, um botão que copia o caminho completo (ex: `users[0].address.city`) para o clipboard. Útil ao trabalhar com APIs ou escrever queries JSONPath.
@@ -63,6 +60,7 @@ O `title` HTML já existe em todos os botões. Tooltips visuais com delay melhor
 - **Adoção da atualização do KCM (2026-07-03)** — CEREBRO.md e Instruções do Projeto mesclados com o template novo. Ver DEC-009.
 - **JSON formulário: edição inline dos campos** — `Field` (Cards/Tabs/Painel) editável via duplo clique, reaproveitando `handleUpdate` da Árvore. 2026-07-07. Ver STATUS/CHANGELOG 0.1.4.
 - **Nomenclatura de ASU migrada para o padrão do kit** (`AAMMDD-asuNNNN.yaml`) — pendência do DEC-009 resolvida em 2026-07-07.
+- **JSON formulário: edição inline no RowDetailModal e nas células do ArrayTable** — 2026-07-07 (sessão 2). Ver DEC-010, STATUS/CHANGELOG 0.1.5.
 
 ---
 
@@ -88,4 +86,5 @@ O `title` HTML já existe em todos os botões. Tooltips visuais com delay melhor
 
 > Observações sobre a ferramenta ASU em si (o Atualizador Automático de Scripts) — separado do Kit de Contexto, é outra ferramenta.
 
-- Nenhum problema ou limitação da ferramenta ASU em si foi encontrado até agora nas 3 instruções geradas (`2026-06-28_001_json-form-view.yaml`, `2026-07-01_001_json-table-ux.yaml`, mais uma anterior de atualização do Node no workflow). Todas usaram `replace_file` (reescrita completa do arquivo-alvo) em vez de patches cirúrgicos menores — isso funcionou bem porque o `JsonViewer.jsx` mudou estruturalmente demais para valer a pena um patch localizado a cada vez, mas é um padrão de uso a observar: se o arquivo continuar crescendo, `replace_file` vai ficar cada vez mais caro (todo o arquivo precisa ser reescrito por completo a cada ajuste pequeno). Considerar migrar para patches `replace_context_block` mais cirúrgicos assim que o `JsonViewer.jsx` estabilizar.
+- Nenhum problema ou limitação da ferramenta ASU em si foi encontrado até agora nas 5 instruções geradas (`2026-06-28_001_json-form-view.yaml`, `2026-07-01_001_json-table-ux.yaml`, uma anterior de atualização do Node, `260707-asu0001.yaml`, `260707-asu0002.yaml`). Todas usaram `replace_file` (reescrita completa do arquivo-alvo) em vez de patches cirúrgicos menores — isso funcionou bem porque o `JsonViewer.jsx` mudou estruturalmente demais para valer a pena um patch localizado a cada vez, mas é um padrão de uso a observar: se o arquivo continuar crescendo, `replace_file` vai ficar cada vez mais caro (todo o arquivo precisa ser reescrito por completo a cada ajuste pequeno). Considerar migrar para patches `replace_context_block` mais cirúrgicos assim que o `JsonViewer.jsx` estabilizar.
+- **2026-07-07 — Validação de sintaxe antes de entregar `replace_file`:** a partir do `260707-asu0002.yaml`, passou a fazer parte do processo rodar o conteúdo do `new_content` pelo Babel (`transformSync` com `@babel/preset-react`) antes de gerar o YAML, além da checagem byte a byte já praticada desde a sessão anterior. Pega erros de sintaxe JSX/JS que a checagem byte a byte sozinha não pega (ela só garante que o texto extraído do YAML bate com o arquivo fonte, não que o arquivo fonte em si é válido). Vale manter como prática padrão para qualquer `replace_file`/`create_file` em `.jsx`/`.js` deste projeto.

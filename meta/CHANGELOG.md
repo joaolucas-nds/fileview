@@ -10,6 +10,16 @@
 
 ---
 
+## [0.1.5] — 2026-07-07
+### Adicionado
+- **JSON Formulário — edição inline no `RowDetailModal`:** o modal de registro completo (aberto ao clicar numa linha do `ArrayTable`) agora edita valores primitivos com duplo clique. Campos `string` usam `<textarea>` (Enter quebra linha, Esc cancela, blur confirma) — acomoda o caso de uso original do modal (texto longo). Campos `number`/`boolean`/`null` usam `<input>` com Enter confirmando, como o resto do projeto.
+- **JSON Formulário — edição inline nas células do `ArrayTable`:** duplo clique numa célula da tabela edita direto, sem precisar abrir o modal. `path` resolvido via índice ORIGINAL da linha no array (não a posição pós-paginação).
+
+### Corrigido / Decisão de interação
+- **Conflito clique-abre-modal × duplo-clique-edita-célula (DEC-010):** clique simples numa linha do `ArrayTable` agora tem um pequeno atraso (220ms) antes de abrir o modal, para dar tempo do segundo clique de um duplo clique cancelar a abertura e iniciar a edição da célula em vez disso.
+
+---
+
 ## [0.1.4] — 2026-07-07
 ### Adicionado
 - **JSON Formulário — edição inline dos campos:** os campos primitivos renderizados por `Field` (usados nos 3 layouts — Cards, Tabs, Painel) agora são editáveis com duplo clique, no mesmo padrão já usado pela Árvore (input inline, Enter confirma, Esc cancela). Reaproveita o `handleUpdate` existente no componente principal do `JsonViewer` — o caminho (`path` dotted) é resolvido em `SectionContent` conforme a seção é um objeto (`chave.campo`) ou um valor solto no nível raiz (`chave`).

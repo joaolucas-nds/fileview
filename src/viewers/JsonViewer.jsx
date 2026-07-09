@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
 
 // Cores por tipo de dado
@@ -143,6 +143,24 @@ function arrayKeys(arr) {
   return [...s]
 }
 
+// Tipo primitivo editável (string/number/boolean/null) — usado tanto pelas
+// células do ArrayTable quanto pelos campos do RowDetailModal para decidir
+// se um valor pode virar input/textarea.
+function isEditablePrimitive(v) {
+  const t = v === null ? 'null' : typeof v
+  return ['string', 'number', 'boolean', 'null'].includes(t)
+}
+
+// Converte o texto digitado de volta pro tipo original do valor. Compartilhado
+// por ArrayTable e RowDetailModal (mesma regra do Field/JsonNode).
+function parseEditedValue(original, text) {
+  const type = original === null ? 'null' : typeof original
+  if (type === 'number') return Number(text)
+  if (type === 'boolean') return text === 'true'
+  if (type === 'null') return null
+  return text
+}
+
 // Valor tipado com cor
 function TypedValue({ value }) {
   const type = value === null ? 'null' : typeof value
@@ -232,11 +250,31 @@ const pageBtn = (disabled) => ({
 })
 
 // Modal de detalhe — mostra o registro completo sem truncamento, campo por campo.
-// Resolve o caso de tabelas com colunas de texto longo (ex: text_content):
-// a tabela trunca com ellipsis, o clique na linha revela o valor inteiro.
-// (Ainda read-only — edição inline aqui é ideia registrada em IDEAS 2026-07-01,
-// fora do escopo desta sessão.)
-function RowDetailModal({ row, onClose }) {
+// Edição inline (2026-07-07, sessão 2): duplo clique num valor primitivo edita.
+// Strings usam <textarea> (não <input>) porque o caso que motivou este modal
+// (DEC-008) é justamente texto longo — Enter insere quebra de linha em vez de
+// confirmar; só Esc cancela ou o blur confirma. Number/boolean/null usam Enter
+// para confirmar, como em qualquer outro campo do projeto. `path`/`rowIdx` vêm
+// do ArrayTable — o path final é `${path}.${rowIdx}.${chave}`, usando o índice
+// ORIGINAL da linha no array (não a posição pós-paginação — mesma classe de
+// cuidado do FIX-002 no CSV). Sem `onUpdate`/`path`/`rowIdx`, o modal continua
+// read-only (uso defensivo, não deveria ocorrer no fluxo atual).
+function RowDetailModal({ row, rowIdx, path, onUpdate, onClose }) {
+  const canEdit = !!onUpdate && !!path && rowIdx !== undefined && rowIdx !== null
+  const [editKey, setEditKey] = useState(null)
+  const [editVal, setEditVal] = useState('')
+
+  const startEdit = (k, v) => {
+    if (!canEdit || !isEditablePrimitive(v)) return
+    setEditVal(v === null ? '' : typeof v === 'string' ? v : String(v))
+    setEditKey(k)
+  }
+
+  const commitEdit = (k, original) => {
+    onUpdate(`${path}.${rowIdx}.${k}`, parseEditedValue(original, editVal))
+    setEditKey(null)
+  }
+
   return (
     <div
       onClick={onClose}
@@ -257,28 +295,67 @@ function RowDetailModal({ row, onClose }) {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           padding: '12px 16px', borderBottom: '1px solid var(--border)',
           position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1,
+          gap: '10px',
         }}>
           <span style={{ fontSize: '13px', fontWeight: '500', color: 'var(--text)' }}>Registro completo</span>
+          {canEdit && (
+            <span style={{ fontSize: '10px', color: 'var(--text-faint)', marginLeft: 'auto' }}>
+              Duplo clique num valor para editar
+            </span>
+          )}
           <button onClick={onClose} style={{
             fontSize: '13px', padding: '2px 9px', borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--border)', color: 'var(--text-muted)', cursor: 'pointer', background: 'transparent',
           }}>✕</button>
         </div>
         <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {Object.entries(row).filter(([k]) => k !== '__dataIdx').map(([k, v]) => (
-            <div key={k} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>{k}</span>
-              <div style={{
-                background: 'var(--gray-light)', border: '0.5px solid var(--border)',
-                borderRadius: 'var(--radius-sm)', padding: '6px 10px',
-                fontSize: '12px', fontFamily: 'var(--font-mono)',
-                whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                color: typeof v === 'string' ? 'var(--green)' : typeof v === 'number' ? 'var(--blue)' : typeof v === 'boolean' ? 'var(--purple)' : 'var(--text-faint)',
-              }}>
-                {v === null || v === undefined ? 'null' : typeof v === 'string' ? `"${v}"` : typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v)}
+          {Object.entries(row).filter(([k]) => k !== '__dataIdx').map(([k, v]) => {
+            const editable = canEdit && isEditablePrimitive(v)
+            const editing = editKey === k
+            return (
+              <div key={k} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-faint)', fontFamily: 'var(--font-mono)' }}>{k}</span>
+                {editing ? (
+                  <textarea
+                    autoFocus
+                    value={editVal}
+                    onChange={e => setEditVal(e.target.value)}
+                    onBlur={() => commitEdit(k, v)}
+                    onKeyDown={e => {
+                      // Em campos não-string (number/boolean/null) Enter confirma, como
+                      // em qualquer input do projeto. Em string, Enter é quebra de linha
+                      // de propósito — o valor pode ser texto longo (ex: text_content).
+                      if (e.key === 'Enter' && typeof v !== 'string') { e.preventDefault(); commitEdit(k, v) }
+                      if (e.key === 'Escape') setEditKey(null)
+                    }}
+                    rows={typeof v === 'string' && v.length > 60 ? 5 : 1}
+                    style={{
+                      background: 'var(--accent-light)', border: '1px solid var(--accent)',
+                      borderRadius: 'var(--radius-sm)', padding: '6px 10px',
+                      fontSize: '12px', fontFamily: 'var(--font-mono)',
+                      whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                      color: 'var(--text)', outline: 'none', resize: 'vertical',
+                    }}
+                  />
+                ) : (
+                  <div
+                    onDoubleClick={() => startEdit(k, v)}
+                    title={editable ? 'Duplo clique para editar' : undefined}
+                    style={{
+                      background: 'var(--gray-light)', border: '0.5px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)', padding: '6px 10px',
+                      fontSize: '12px', fontFamily: 'var(--font-mono)',
+                      whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                      cursor: editable ? 'text' : 'default',
+                      color: typeof v === 'string' ? 'var(--green)' : typeof v === 'number' ? 'var(--blue)' : typeof v === 'boolean' ? 'var(--purple)' : 'var(--text-faint)',
+                    }}
+                  >
+                    {v === null || v === undefined ? 'null' : typeof v === 'string' ? `"${v}"` : typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v)}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>
@@ -289,18 +366,62 @@ function RowDetailModal({ row, onClose }) {
 // Colunas com table-layout:fixed + ellipsis de uma linha evitam que texto longo
 // (ex: text_content) estique a altura da linha. Paginação evita renderizar
 // centenas de linhas de uma vez. Clique na linha abre o registro completo.
+//
+// Edição inline (2026-07-07, sessão 2): duplo clique numa célula primitiva edita
+// direto na tabela. Conflito resolvido: clique simples na linha abre o modal,
+// mas um pequeno atraso (`ROW_CLICK_DELAY`) dá tempo do 2º clique de um duplo
+// clique chegar e cancelar a abertura — sem o atraso, o 1º clique do duplo
+// clique sempre abriria o modal antes do dblclick ser reconhecido (o evento
+// `click` do DOM dispara nos dois cliques de um duplo clique, não só o
+// `dblclick`). Padrão comum em listas (Explorer, Gmail) para essa ambiguidade.
+// `path` é a chave da seção (ex.: "users"); o path de cada célula editada é
+// `${path}.${índiceORIGINAL}.${coluna}` — índice original da linha no array
+// completo, não a posição pós-paginação (mesma classe de cuidado do FIX-002).
 const ROWS_PER_PAGE = 20
+const ROW_CLICK_DELAY = 220 // ms — janela para o 2º clique de um duplo clique chegar
 
-function ArrayTable({ value }) {
+function ArrayTable({ value, path, onUpdate }) {
   const keys = arrayKeys(value)
   const [page, setPage] = useState(0)
-  const [selectedRow, setSelectedRow] = useState(null)
+  const [selected, setSelected] = useState(null) // { row, idx } — idx é o índice ORIGINAL no array
+  const [editCell, setEditCell] = useState(null) // { idx, col }
+  const [editVal, setEditVal] = useState('')
+  const clickTimer = useRef(null)
   const totalPages = Math.max(1, Math.ceil(value.length / ROWS_PER_PAGE))
+
+  const canEdit = !!onUpdate && !!path
 
   // Reseta a página se o array mudar (troca de arquivo)
   useEffect(() => { setPage(0) }, [value])
 
+  // Limpa o timer pendente se o componente desmontar no meio da janela de espera
+  useEffect(() => () => { if (clickTimer.current) clearTimeout(clickTimer.current) }, [])
+
   const pageRows = value.slice(page * ROWS_PER_PAGE, page * ROWS_PER_PAGE + ROWS_PER_PAGE)
+
+  const scheduleOpenModal = (row, idx) => {
+    if (clickTimer.current) clearTimeout(clickTimer.current)
+    clickTimer.current = setTimeout(() => {
+      setSelected({ row, idx })
+      clickTimer.current = null
+    }, ROW_CLICK_DELAY)
+  }
+
+  const startCellEdit = (e, idx, col, val) => {
+    e.stopPropagation()
+    if (clickTimer.current) { clearTimeout(clickTimer.current); clickTimer.current = null }
+    if (!canEdit || !isEditablePrimitive(val)) return
+    setEditVal(val === null ? '' : typeof val === 'string' ? val : String(val))
+    setEditCell({ idx, col })
+  }
+
+  const commitCellEdit = () => {
+    if (!editCell) return
+    const { idx, col } = editCell
+    const original = value[idx]?.[col] ?? null
+    onUpdate(`${path}.${idx}.${col}`, parseEditedValue(original, editVal))
+    setEditCell(null)
+  }
 
   return (
     <div>
@@ -331,37 +452,73 @@ function ArrayTable({ value }) {
             </tr>
           </thead>
           <tbody>
-            {pageRows.map((row, i) => (
-              <tr
-                key={page * ROWS_PER_PAGE + i}
-                onClick={() => setSelectedRow(row)}
-                style={{ cursor: 'pointer' }}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--gray-light)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              >
-                {keys.map(k => {
-                  const cellVal = row[k] ?? null
-                  const preview = cellVal === null ? '' : typeof cellVal === 'object' ? JSON.stringify(cellVal) : String(cellVal)
-                  return (
-                    <td key={k} title={preview} style={{
-                      padding: '5px 10px', border: '0.5px solid var(--border)',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      <TypedValue value={cellVal} />
-                    </td>
-                  )
-                })}
-              </tr>
-            ))}
+            {pageRows.map((row, i) => {
+              const originalIdx = page * ROWS_PER_PAGE + i
+              return (
+                <tr
+                  key={originalIdx}
+                  onClick={() => scheduleOpenModal(row, originalIdx)}
+                  style={{ cursor: 'pointer' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--gray-light)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  {keys.map(k => {
+                    const cellVal = row[k] ?? null
+                    const editable = canEdit && isEditablePrimitive(cellVal)
+                    const editing = editCell && editCell.idx === originalIdx && editCell.col === k
+                    const preview = cellVal === null ? '' : typeof cellVal === 'object' ? JSON.stringify(cellVal) : String(cellVal)
+                    return (
+                      <td key={k} title={editing ? undefined : preview} style={{
+                        padding: editing ? '2px' : '5px 10px', border: '0.5px solid var(--border)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        cursor: editable ? 'text' : 'default',
+                      }}
+                        onDoubleClick={e => startCellEdit(e, originalIdx, k, cellVal)}
+                      >
+                        {editing ? (
+                          <input
+                            autoFocus
+                            value={editVal}
+                            onClick={e => e.stopPropagation()}
+                            onChange={e => setEditVal(e.target.value)}
+                            onBlur={commitCellEdit}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') commitCellEdit()
+                              if (e.key === 'Escape') setEditCell(null)
+                            }}
+                            style={{
+                              width: '100%', fontSize: '12px', fontFamily: 'var(--font-mono)',
+                              border: '1px solid var(--accent)', borderRadius: '3px',
+                              padding: '3px 6px', background: 'var(--accent-light)',
+                              color: 'var(--text)', outline: 'none',
+                            }}
+                          />
+                        ) : (
+                          <TypedValue value={cellVal} />
+                        )}
+                      </td>
+                    )
+                  })}
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
 
       <div style={{ fontSize: '10px', color: 'var(--text-faint)', marginTop: '5px' }}>
-        Clique numa linha para ver o registro completo sem truncamento
+        Clique numa linha para ver o registro completo · duplo clique numa célula edita direto{canEdit ? '' : ' (indisponível para esta seção)'}
       </div>
 
-      {selectedRow && <RowDetailModal row={selectedRow} onClose={() => setSelectedRow(null)} />}
+      {selected && (
+        <RowDetailModal
+          row={selected.row}
+          rowIdx={selected.idx}
+          path={path}
+          onUpdate={onUpdate}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </div>
   )
 }
@@ -380,13 +537,16 @@ function PrimitiveList({ value }) {
 }
 
 // Conteúdo de seção — compartilhado pelos 3 layouts.
-// `onUpdate` (opcional) é repassado ao Field com o `path` dotted certo:
-// seção primitiva solta → path = section.key; seção objeto → path = "section.key.campo".
-// Arrays (tabela ou chips) ainda não recebem edição inline nesta sessão.
+// `onUpdate` (opcional) é repassado ao Field/ArrayTable com o `path` dotted certo:
+// seção primitiva solta → path = section.key; seção objeto → path = "section.key.campo";
+// seção array de objetos → path = section.key (o ArrayTable completa com ".idx.coluna").
+// Arrays de primitivos (chips) ainda não recebem edição inline nesta sessão.
 function SectionContent({ section, onUpdate }) {
   const { value, type, key } = section
   if (type === 'array') {
-    return isArrayOfObjects(value) ? <ArrayTable value={value} /> : <PrimitiveList value={value} />
+    return isArrayOfObjects(value)
+      ? <ArrayTable value={value} path={key} onUpdate={onUpdate} />
+      : <PrimitiveList value={value} />
   }
   if (type === 'object') {
     return (

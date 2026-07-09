@@ -26,7 +26,8 @@
 - [x] Deploy automático via GitHub Actions (`.github/workflows/deploy.yml`) — confirmado funcionando em produção
 - [x] JSON: modo Formulário — Cards, Tabs e Painel com sub-switcher
 - [x] JSON: UX de tabelas grandes — truncamento, paginação, modal de detalhe (DEC-008)
-- [x] JSON formulário: edição inline dos campos (Field, nos 3 layouts) — 2026-07-07. RowDetailModal e células do ArrayTable ainda pendentes (ver IDEAS).
+- [x] JSON formulário: edição inline dos campos (Field, nos 3 layouts) — 2026-07-07.
+- [x] JSON formulário: edição inline no RowDetailModal e nas células do ArrayTable — 2026-07-07 (sessão 2). Ver DEC-010.
 - [ ] CSV: Tab navigation entre células (confirm + mover)
 - [ ] Busca Ctrl+F no SourceEditor (highlight de ocorrências)
 - [ ] Tooltips customizados na toolbar do MD editor

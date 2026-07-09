@@ -184,7 +184,27 @@ Você decidiu migrar para o padrão sugerido pelo kit: `AAMMDD-asuNNNN.yaml` (da
 
 ---
 
-## FIX-001 — PDF: ArrayBuffer detachado pelo worker do PDF.js
+## DEC-010 — ArrayTable/RowDetailModal: debounce de clique para distinguir "abrir modal" de "editar célula"
+**Data:** 2026-07-07 · **Status:** aceita
+
+### Contexto
+Ao estender a edição inline para dentro do `ArrayTable` (células) e do `RowDetailModal` (registro completo), surgiu um conflito de interação: a tabela já usava **clique simples na linha** para abrir o modal (desde o DEC-008). Adicionar **duplo clique na célula** para editar esbarra nisso, porque o evento `click` do DOM dispara duas vezes num duplo clique (uma vez por cada clique), antes do `dblclick` ser reconhecido — ou seja, um duplo clique numa célula abriria o modal no primeiro clique e só editaria a célula depois, ou os dois comportamentos disparariam juntos.
+
+### Decisão
+`scheduleOpenModal` adia a abertura do modal em `ROW_CLICK_DELAY = 220`ms via `setTimeout`. Se um duplo clique numa célula chegar dentro dessa janela, `startCellEdit` cancela o timer pendente (`clearTimeout`) e a edição da célula assume — o modal nunca abre. Se não houver segundo clique, o timer dispara normalmente e o modal abre como antes. `startCellEdit` também chama `e.stopPropagation()` para a célula não borbulhar o evento até o `onClick` da linha.
+
+### Alternativas consideradas
+- **Trocar o gatilho do modal de "clique na linha" para um ícone/botão dedicado** (ex.: ⤢ ao final da linha) — resolve o conflito sem debounce, é o padrão mais "limpo" architeturalmente, mas é uma mudança de UX maior (usuários já acostumados com clique-na-linha desde o DEC-008 precisariam reaprender) para um ganho marginal; descartada por ora, fica registrada como alternativa se o debounce se mostrar ruim na prática.
+- **Editar célula com clique simples, abrir modal só com duplo clique** (inverter os gatilhos) — mais direto tecnicamente (sem debounce), mas clique simples iniciar edição é mais arriscado para cliques acidentais/de navegação do que o padrão atual; descartada.
+- **Sem debounce, aceitar o modal abrindo e fechando rápido antes da edição** — testado mentalmente, gera um "flash" visual do modal a cada duplo clique de edição; descartada por ser um defeito visível, não cosmético.
+
+### Consequências
+Clique simples numa linha agora tem ~220ms de atraso perceptível apenas em teste manual atento (não é perceptível no uso normal — é o mesmo padrão usado por listas de arquivo do Windows Explorer e pela lista de conversas do Gmail para a mesma ambiguidade clique/duplo-clique). Se no uso real o atraso incomodar, a alternativa descartada nº 1 (ícone dedicado) é o próximo candidato.
+
+### Nota complementar — textarea vs input no RowDetailModal
+Campos do tipo `string` no `RowDetailModal` editam via `<textarea>` (não `<input>` como o Field/JsonNode), porque o próprio motivo do modal existir (DEC-008) é acomodar texto longo (`text_content` e afins) — um input de uma linha só seria ruim para esse caso. Como consequência, `Enter` num campo string insere quebra de linha em vez de confirmar (comportamento nativo de `<textarea>`); só `Esc` cancela ou o `blur` confirma. Campos `number`/`boolean`/`null` seguem o padrão do resto do projeto (`Enter` confirma), já que não têm o mesmo problema de texto longo.
+
+---
 **Data:** 2026-06-05
 
 - **Sintoma:** `⚠ Erro ao abrir PDF: Failed to execute 'postMessage' on 'Worker': ArrayBuffer at index 0 is already detached.`
