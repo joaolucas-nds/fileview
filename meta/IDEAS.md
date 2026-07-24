@@ -8,7 +8,7 @@
 ## 💡 Ideias Ativas — Usuário
 
 ### 2026-06 — CSV: mais prático, eficiente e intuitivo
-A tabela atual funciona mas não é fluida como planilha real. Melhorias desejadas: Tab para mover entre células, seleção de múltiplas células, copiar/colar bloco de células, resize de colunas arrastando o header, freeze de linha de cabeçalho (já tem) e possível freeze da primeira coluna.
+A tabela atual funciona mas não é fluida como planilha real. Melhorias desejadas: ~~Tab para mover entre células~~ (implementado em 2026-07-07, ver Concluídas), seleção de múltiplas células, copiar/colar bloco de células, resize de colunas arrastando o header, freeze de linha de cabeçalho (já tem) e possível freeze da primeira coluna. Itens ainda em aberto: seleção múltipla, copiar/colar bloco, resize de coluna, freeze da primeira coluna.
 
 ---
 
@@ -22,9 +22,6 @@ Arrays simples (chips) no FormView continuam read-only — a edição inline nes
 
 ### 2026-06-05 — JSON: botão "copiar caminho" por nó
 Em cada nó da árvore, um botão que copia o caminho completo (ex: `users[0].address.city`) para o clipboard. Útil ao trabalhar com APIs ou escrever queries JSONPath.
-
-### 2026-06-05 — CSV: Tab navigation entre células
-Pressionar Tab enquanto edita confirma e move para a próxima coluna (ou primeira coluna da próxima linha). Shift+Tab volta. Comportamento idêntico ao Excel/Google Sheets.
 
 ### 2026-06-05 — Busca Ctrl+F dentro do documento
 Para SourceEditor e MarkdownViewer: campo de busca flutuante que destaca ocorrências e permite navegar (↑↓). Para JSON, busca por chave ou valor na árvore ou nos campos do formulário.
@@ -61,6 +58,7 @@ O `title` HTML já existe em todos os botões. Tooltips visuais com delay melhor
 - **JSON formulário: edição inline dos campos** — `Field` (Cards/Tabs/Painel) editável via duplo clique, reaproveitando `handleUpdate` da Árvore. 2026-07-07. Ver STATUS/CHANGELOG 0.1.4.
 - **Nomenclatura de ASU migrada para o padrão do kit** (`AAMMDD-asuNNNN.yaml`) — pendência do DEC-009 resolvida em 2026-07-07.
 - **JSON formulário: edição inline no RowDetailModal e nas células do ArrayTable** — 2026-07-07 (sessão 2). Ver DEC-010, STATUS/CHANGELOG 0.1.5.
+- **CSV: navegação por Tab entre células** — Tab confirma e move para a próxima coluna/linha (Shift+Tab volta), seguindo a ordem visível (`filtered`). 2026-07-07 (sessão 3). Ver STATUS/CHANGELOG 0.1.6.
 
 ---
 
@@ -88,3 +86,4 @@ O `title` HTML já existe em todos os botões. Tooltips visuais com delay melhor
 
 - Nenhum problema ou limitação da ferramenta ASU em si foi encontrado até agora nas 5 instruções geradas (`2026-06-28_001_json-form-view.yaml`, `2026-07-01_001_json-table-ux.yaml`, uma anterior de atualização do Node, `260707-asu0001.yaml`, `260707-asu0002.yaml`). Todas usaram `replace_file` (reescrita completa do arquivo-alvo) em vez de patches cirúrgicos menores — isso funcionou bem porque o `JsonViewer.jsx` mudou estruturalmente demais para valer a pena um patch localizado a cada vez, mas é um padrão de uso a observar: se o arquivo continuar crescendo, `replace_file` vai ficar cada vez mais caro (todo o arquivo precisa ser reescrito por completo a cada ajuste pequeno). Considerar migrar para patches `replace_context_block` mais cirúrgicos assim que o `JsonViewer.jsx` estabilizar.
 - **2026-07-07 — Validação de sintaxe antes de entregar `replace_file`:** a partir do `260707-asu0002.yaml`, passou a fazer parte do processo rodar o conteúdo do `new_content` pelo Babel (`transformSync` com `@babel/preset-react`) antes de gerar o YAML, além da checagem byte a byte já praticada desde a sessão anterior. Pega erros de sintaxe JSX/JS que a checagem byte a byte sozinha não pega (ela só garante que o texto extraído do YAML bate com o arquivo fonte, não que o arquivo fonte em si é válido). Vale manter como prática padrão para qualquer `replace_file`/`create_file` em `.jsx`/`.js` deste projeto.
+- **2026-07-07 (sessão 3) — Primeiro uso de `replace_context_block` neste projeto (`260707-asu0003.yaml`, em `CsvViewer.jsx`) — funcionou bem e a checagem ficou mais rigorosa.** Diferente do `JsonViewer.jsx` (sempre `replace_file`, porque muda estruturalmente a cada sessão), o `CsvViewer.jsx` está estável há semanas e a mudança (navegação Tab) é pequena e localizada — caso de uso exatamente do que o `replace_context_block` foi feito para resolver. Como a instrução tinha 3 modificações cirúrgicas encadeadas na mesma execução (uma depende do resultado da anterior), a checagem byte-a-byte sozinha não bastava — antes de gerar o YAML, simulei a aplicação da instrução inteira em Python contra o arquivo real do mount (mesma lógica de before/after/new_content que a ferramenta usaria) e comparei o resultado final byte a byte com o arquivo esperado, além da validação de sintaxe via Babel. Vale generalizar essa prática (simular a instrução completa antes de entregar, não só validar anchors isoladamente) para qualquer ASU com mais de uma modificação no mesmo arquivo.

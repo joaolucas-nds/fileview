@@ -10,6 +10,12 @@
 
 ---
 
+## [0.1.6] — 2026-07-07
+### Adicionado
+- **CSV — navegação por Tab entre células:** durante a edição de uma célula, `Tab` confirma o valor e abre a célula seguinte para edição; `Shift+Tab` volta. Ao chegar na última/primeira coluna, pula para a primeira/última coluna da linha seguinte/anterior. A navegação segue a ordem **visível** da tabela (respeitando filtro e ordenação atuais), não a ordem crua do CSV — mesmo cuidado do FIX-002 aplicado agora também à navegação, não só à gravação.
+
+---
+
 ## [0.1.5] — 2026-07-07
 ### Adicionado
 - **JSON Formulário — edição inline no `RowDetailModal`:** o modal de registro completo (aberto ao clicar numa linha do `ArrayTable`) agora edita valores primitivos com duplo clique. Campos `string` usam `<textarea>` (Enter quebra linha, Esc cancela, blur confirma) — acomoda o caso de uso original do modal (texto longo). Campos `number`/`boolean`/`null` usam `<input>` com Enter confirmando, como o resto do projeto.

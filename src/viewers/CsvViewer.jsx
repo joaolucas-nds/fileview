@@ -47,21 +47,46 @@ export default function CsvViewer() {
     setEditCell({ dataIdx, col: colIdx })
     setEditVal(val)
   }
-
-  // Confirma edição no data ORIGINAL usando dataIdx (FIX-002)
-  const commitEdit = () => {
-    if (!editCell) return
-    const { dataIdx, col } = editCell
+  // Confirma edicao no data ORIGINAL usando dataIdx (FIX-002). Extraida a
+  // gravacao em si (`commitValue`) para ser reaproveitada tambem pela
+  // navegacao Tab (`commitAndMove`), que precisa commitar E abrir a proxima
+  // celula na mesma chamada, sem passar pelo estado intermediario null.
+  const commitValue = (dataIdx, col, val) => {
     const colName = headers[col]
     const newData = data.map((r, i) =>
-      i === dataIdx ? { ...r, [colName]: editVal } : r
+      i === dataIdx ? { ...r, [colName]: val } : r
     )
     updateContent(activeFile.id, Papa.unparse(newData))
+  }
+
+  const commitEdit = () => {
+    if (!editCell) return
+    commitValue(editCell.dataIdx, editCell.col, editVal)
     setEditCell(null)
+  }
+
+  // Tab confirma a celula atual e abre a proxima (Shift+Tab volta), navegando
+  // pela ordem VISIVEL (`filtered` - respeitando filtro/ordenacao atuais), nao
+  // pela ordem crua de `data`. Ao passar da ultima coluna, pula para a primeira
+  // coluna da proxima linha (e vice-versa voltando). Nas bordas da tabela
+  // (Tab na ultima celula, ou Shift+Tab na primeira), so fecha a edicao.
+  const commitAndMove = (forward) => {
+    if (!editCell) return
+    commitValue(editCell.dataIdx, editCell.col, editVal)
+    const curIdx = filtered.findIndex(r => r.__dataIdx === editCell.dataIdx)
+    if (curIdx === -1) { setEditCell(null); return }
+    let nextCol = editCell.col + (forward ? 1 : -1)
+    let nextRowIdx = curIdx
+    if (nextCol >= headers.length) { nextCol = 0; nextRowIdx = curIdx + 1 }
+    else if (nextCol < 0) { nextCol = headers.length - 1; nextRowIdx = curIdx - 1 }
+    if (nextRowIdx < 0 || nextRowIdx >= filtered.length) { setEditCell(null); return }
+    const nextRow = filtered[nextRowIdx]
+    startEdit(nextRow.__dataIdx, nextCol, nextRow[headers[nextCol]] ?? '')
   }
 
   // onMouseDown + preventDefault dispara ANTES do onBlur do input
   const cancelEdit = () => setEditCell(null)
+
 
   const addRow = () => {
     const emptyRow = Object.fromEntries(headers.map(h => [h, '']))
@@ -165,6 +190,8 @@ export default function CsvViewer() {
                               onBlur={commitEdit}
                               onKeyDown={e => {
                                 if (e.key === 'Enter') commitEdit()
+                                if (e.key === 'Tab') { e.preventDefault(); commitAndMove(!e.shiftKey) }
+
                                 if (e.key === 'Escape') { e.preventDefault(); cancelEdit() }
                               }}
                               style={{
@@ -218,7 +245,7 @@ export default function CsvViewer() {
         padding: '4px 16px', borderTop: '1px solid var(--border)',
         background: 'var(--surface)', fontSize: '11px', color: 'var(--text-faint)', flexShrink: 0,
       }}>
-        Duplo clique numa célula para editar · Enter confirma · Esc ou ✕ cancela · clique no cabeçalho para ordenar
+        Duplo clique numa célula para editar · Tab move entre células (confirma) · Enter confirma · Esc ou ✕ cancela · clique no cabeçalho para ordenar
       </div>
     </div>
   )

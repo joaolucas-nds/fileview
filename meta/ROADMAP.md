@@ -28,7 +28,7 @@
 - [x] JSON: UX de tabelas grandes — truncamento, paginação, modal de detalhe (DEC-008)
 - [x] JSON formulário: edição inline dos campos (Field, nos 3 layouts) — 2026-07-07.
 - [x] JSON formulário: edição inline no RowDetailModal e nas células do ArrayTable — 2026-07-07 (sessão 2). Ver DEC-010.
-- [ ] CSV: Tab navigation entre células (confirm + mover)
+- [x] CSV: Tab navigation entre células (confirm + mover) — 2026-07-07 (sessão 3).
 - [ ] Busca Ctrl+F no SourceEditor (highlight de ocorrências)
 - [ ] Tooltips customizados na toolbar do MD editor
 
