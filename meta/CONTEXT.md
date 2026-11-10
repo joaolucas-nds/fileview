@@ -2,7 +2,7 @@
 
 > Arquivo **estável**. Lido no início de cada sessão para ambientar o assistente.
 > Muda só em alteração estrutural (stack, arquitetura, nova armadilha descoberta).
-> Esta revisão (2026-07-03) foi escrita com detalhe máximo propositalmente — é o handoff para uma conversa nova sem histórico.
+> Revisão base de 2026-07-03, atualizada pontualmente em 2026-11-07 (edição inline do JsonViewer, Tab do CsvViewer, nomenclatura ASU, layout real de `meta/` e `logs/`). Escrita com detalhe máximo propositalmente — é o handoff para uma conversa nova sem histórico.
 
 ---
 
@@ -54,15 +54,20 @@ fileview/
 │   ├── GLOSSARY.md                     # termos do projeto
 │   ├── HISTORY.md                       # conhecimento consolidado — renomeado de HISTORICO.md em 2026-07-03
 │   ├── LOG-TEMPLATE.md                  # molde do log de sessão (referência fixa)
-│   ├── INSTRUCTION_GUIDE.md              # guia COMPLETO do formato ASU — não é doc do kit, é do ASU
-│   ├── PROMPT_IA.md                       # bloco resumido de instrução do ASU para colar em outros projetos
-│   └── demo.yaml                          # exemplo executável do ASU (examples/demo_project fictício, não faz parte do Fileview)
+│   ├── ASU/                               # material da ferramenta ASU (não é doc do kit)
+│   │   ├── INSTRUCTION_GUIDE.md           # guia COMPLETO do formato ASU
+│   │   ├── PROMPT_IA.md                    # bloco resumido de instrução para colar em outros projetos
+│   │   ├── GUIA_PASSO_A_PASSO.md           # passo a passo de uso do ASU
+│   │   └── demo.yaml                       # exemplo executável do ASU (fictício, não faz parte do Fileview)
+│   └── HISTORICO.md                       # DUPLICATA antiga de HISTORY.md — ainda no repo em 2026-11-06; apagar (ver STATUS)
 ├── logs/                        # logs de sessão — vivem no Git, NÃO sobem no conhecimento do Projeto (lidos sob demanda)
 │   ├── 2026-06-05.md
 │   ├── 2026-06-25.md
 │   ├── 2026-06-28.md
 │   ├── 2026-07-01.md
-│   └── 2026-07-03.md             # esta sessão
+│   ├── 2026-07-03.md
+│   ├── 2026-07-07.md              # 3 sessões no mesmo dia (ASU 0001–0003)
+│   └── 2026-11-07.md              # handoff (preparação de transferência de conversa)
 └── src/
     ├── main.jsx                   # ReactDOM.createRoot + <App/> dentro de <React.StrictMode>
     ├── App.jsx                     # layout: <Sidebar/> + tab bar + mode switcher + <ViewerRouter/>; define mdModes/structModes/csvModes/jsonModes
@@ -145,6 +150,13 @@ Transforma o JSON num formulário visual. Pipeline:
    - **Paginação client-side**: `ROWS_PER_PAGE = 20`. Só mostra os controles ◀/▶ se `value.length > ROWS_PER_PAGE`. `useEffect(() => setPage(0), [value])` reseta a página ao trocar de arquivo/array.
    - **Clique numa linha** → abre `RowDetailModal` com o registro completo, campo por campo, sem truncamento (`white-space: pre-wrap`), objetos aninhados via `JSON.stringify(v, null, 2)`. Filtra a chave interna `__dataIdx` se presente (herdada de outro contexto — na prática o JSON não injeta isso, é defensivo).
    - Esse trio truncamento+paginação+modal é o padrão usado por Airtable/Notion database view/AG Grid — pesquisado e documentado em DEC-008 antes de implementar (princípio #7 do CEREBRO).
+5. **Edição inline (0.1.4 e 0.1.5)** — todos os pontos de edição do Formulário chamam o MESMO `handleUpdate(path, newVal)` da Árvore (path dotted):
+   - `Field` (Cards/Tabs/Painel): duplo clique → `<input>`; Enter confirma, Esc cancela. Path `section.key` (ou `section.key.campo` para objeto de 1º nível).
+   - `ArrayTable` (células): duplo clique edita direto na tabela. Path `${section}.${idxOriginal}.${col}`, com `idxOriginal = page * ROWS_PER_PAGE + i` — o índice ORIGINAL do array, não a posição pós-paginação (mesma classe de erro do FIX-002).
+   - `RowDetailModal({ row, rowIdx, path, onUpdate, onClose })`: duplo clique num valor primitivo edita; `string` usa `<textarea>` (Enter = quebra de linha; Esc cancela; blur confirma), `number`/`boolean`/`null` usam `<input>` (Enter confirma).
+   - Helpers: `isEditablePrimitive(v)` (só folha string/number/boolean/null edita; objeto/array aninhado não) e `parseEditedValue(original, text)` (devolve o texto ao tipo ORIGINAL; limitações conhecidas em IDEAS: número inválido → `NaN` → grava `null`).
+   - **`ROW_CLICK_DELAY = 220` ms (DEC-010):** clique simples numa linha abre o modal com atraso (`scheduleOpenModal` → `setTimeout`) para um duplo clique numa célula poder cancelar a abertura (`startCellEdit` faz `clearTimeout` + `stopPropagation`) — o DOM dispara `click` duas vezes antes do `dblclick`. Alternativa descartada por ora: ícone dedicado para abrir o modal.
+   - `PrimitiveList` (chips de arrays de primitivos) continua SOMENTE LEITURA — ver IDEAS.
 
 ## Como o CsvViewer funciona
 
@@ -153,6 +165,7 @@ Transforma o JSON num formulário visual. Pipeline:
 - Edição: duplo clique numa célula → `startEdit(dataIdx, colIdx, val)` → mostra `<input>` + botão `✕` visível ao lado (não só ícone escondido). `commitEdit()` reconstrói `data` inteiro via `.map` trocando só a linha de `dataIdx`, chama `Papa.unparse` e `updateContent`. `cancelEdit()` só fecha o input sem salvar.
 - **Armadilha #5 aplicada aqui**: o botão cancelar usa `onMouseDown={e => { e.preventDefault(); cancelEdit() }}` em vez de `onClick` — porque `onBlur` do input dispara ANTES de qualquer `onClick` de um elemento vizinho, então um botão cancelar com `onClick` normal NUNCA seria alcançado (o `onBlur` já teria comitado a edição). `preventDefault()` no `mousedown` impede o input de perder o foco a tempo do `onBlur` disparar.
 - Botão "✕ limpar" ao lado do campo de busca limpa o filtro com um clique.
+- **Navegação por Tab (0.1.6):** `commitEdit` foi dividida — `commitValue(dataIdx, col, val)` só grava (`data.map` + `Papa.unparse` + `updateContent`); `commitEdit` = `commitValue` + fecha; `commitAndMove(forward)` = `commitValue` + abre a próxima célula via `startEdit`, sem passar pelo estado `null` intermediário. Tab/Shift+Tab no `onKeyDown` do input. A navegação percorre `filtered` (ordem VISÍVEL — filtro/ordenação atuais): acha a linha atual por `__dataIdx`, calcula a próxima (coluna ±1; passando da borda de coluna, pula para a linha seguinte/anterior) e reabre usando o `__dataIdx` da linha de destino. Nas bordas da tabela só fecha a edição — NÃO cria linha nova (possível extensão, ver IDEAS). Resíduo cosmético: linha em branco dentro do `onKeyDown`, entre os handlers de Tab e Escape.
 
 ## Como o MarkdownEditor funciona
 
@@ -184,11 +197,15 @@ Transforma o JSON num formulário visual. Pipeline:
 
 **Sub-armadilha de tabela HTML (dentro de DEC-008, não numerada como as 6 principais mas real):** `table-layout: auto` (o padrão do HTML) deixa o browser expandir colunas livremente para caber o conteúdo — isso é **incompatível** com `text-overflow: ellipsis`, que só funciona com `table-layout: fixed` + largura explícita por coluna. Vale lembrar em qualquer tabela HTML nova do projeto.
 
+**Sub-armadilha de interação (DEC-010):** o DOM dispara `click` DUAS vezes antes do `dblclick`. Qualquer UI que combine "clique simples faz X" com "duplo clique dentro dele faz Y" precisa desambiguar (timer que o 2º clique cancela, ou outro gatilho para X). No `ArrayTable` é o `ROW_CLICK_DELAY`.
+
+**Sub-armadilhas do ASU (aprendidas em 2026-07-07):** (a) em `replace_file`, use bloco `|` simples — o indicador `|2` deslocou o conteúdo 2 espaços e corrompeu o arquivo SEM erro; (b) bater o `new_content` byte a byte com o fonte não prova que o fonte é JS válido — rodar o Babel (`transformSync` + `@babel/preset-react`; em Babel 8 `transform` é assíncrono); (c) com várias modificações encadeadas no mesmo arquivo, simular a instrução INTEIRA em sequência, não cada âncora isolada; (d) âncoras em ASCII (usar `.*`/`.+` no lugar de ã, —, setas, box-drawing); (e) quando uma convenção vive em dois arquivos de instrução (CEREBRO × PROJECT_INSTRUCTIONS), conferir os dois.
+
 ## Sobre o sistema de documentação (meta/) e o workflow ASU
 
 Este projeto usa o **Kit de Contexto Universal (KCM)** para manter continuidade entre sessões de conversa (cada conversa nova começa sem memória; os arquivos em `meta/` são o "disco" persistente). O comportamento completo do assistente está em `meta/CEREBRO.md` — não repita aqui, é lido à parte.
 
-Mudanças de **código** neste projeto são entregues como instruções **ASU** (Atualizador Automático de Scripts) — um YAML que aplica patches cirúrgicos com backup e rollback automático, em vez de arquivos inteiros reescritos à mão. O formato é documentado em `meta/INSTRUCTION_GUIDE.md` (autocontido, com exemplo completo, tabela de estratégias, seis regras de ouro, tabela de correção de erros). Convenção de nome dos ASUs deste projeto: `AAAA-MM-DD_NNN_descricao.yaml` (ex.: `2026-07-01_001_json-table-ux.yaml`) — ver DEC-009 para o porquê de divergir do padrão sugerido pelo kit.
+Mudanças de **código** neste projeto são entregues como instruções **ASU** (Atualizador Automático de Scripts) — um YAML que aplica patches cirúrgicos com backup e rollback automático, em vez de arquivos inteiros reescritos à mão. O formato é documentado em `meta/ASU/INSTRUCTION_GUIDE.md` (autocontido, com exemplo completo, tabela de estratégias, seis regras de ouro, tabela de correção de erros). Convenção de nome (desde 2026-07-07, DEC-009): `AAMMDD-asuNNNN.yaml` (ex.: `260707-asu0003.yaml` — data compacta + sequência GLOBAL de 4 dígitos, sem descrição no nome; ASUs antigos não foram renomeados). Escolha da estratégia: `replace_file` para o que muda estruturalmente a cada sessão (`JsonViewer.jsx`); `replace_context_block`/patches para arquivo estável (`CsvViewer.jsx`).
 
 Documentos **rolantes** (STATUS, CHANGELOG, IDEAS, HISTORY) são sempre entregues como arquivo completo, nunca como ASU — a edição neles é holística (mover item resolvido, reclassificar, checar que nada se perdeu), o que um patch cirúrgico não capta.
 

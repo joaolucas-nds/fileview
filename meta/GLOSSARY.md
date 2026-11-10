@@ -15,6 +15,9 @@
 - **`__dataIdx`** — campo interno injetado em cada linha do array `filtered` no CsvViewer, que guarda o índice da linha no array `data` original. Garante que `commitEdit` opere sobre a linha correta mesmo com filtros/sort ativos.
 - **FormView** — o modo Formulário do JsonViewer; converte o JSON num layout visual (Cards/Tabs/Painel) em vez de árvore de nós.
 - **ArrayTable** — componente dentro do JsonViewer que renderiza um array de objetos como tabela HTML paginada, com truncamento e modal de detalhe (ver DEC-008).
+- **RowDetailModal** — overlay do `ArrayTable` com o registro completo (aberto por clique na linha, DEC-008). Editável desde 0.1.5: `<textarea>` para string, `<input>` para number/boolean/null (DEC-010).
+- **`ROW_CLICK_DELAY`** — constante (220 ms) do `JsonViewer.jsx`: atraso do clique-na-linha antes de abrir o modal, para o duplo clique numa célula poder cancelar e editar (DEC-010). `scheduleOpenModal` agenda; `startCellEdit` cancela.
+- **`commitValue` / `commitAndMove`** — funções do `CsvViewer.jsx` (0.1.6): `commitValue` só grava a célula no `data` original; `commitAndMove(forward)` grava e abre a próxima célula (Tab/Shift+Tab) percorrendo `filtered`, a ordem visível.
 
 ## Arquiteturas / módulos
 - **AppContext** — Context + Provider em `src/context/AppContext.jsx`. Contém todo o estado da aplicação. Viewers e editors não gerenciam estado de arquivo próprio — apenas estado de UI local (editCell, search, scale, etc.).
@@ -27,10 +30,13 @@
 ## Kit de Contexto e ASU (termos de processo, não do produto)
 - **KCM** — "Kit de Contexto Universal" (ou nome equivalente usado pelo usuário) — o conjunto de templates que originou `CEREBRO.md` e os demais arquivos de `meta/`. Evolui com o tempo; quando atualizado, os arquivos `*__template-update.md`/`.txt` são trazidos ao Projeto para comparação e adoção (ver DEC-009).
 - **template-update** — sufixo usado nos arquivos que representam a versão NOVA de um template do KCM, trazida para comparação com a versão em uso no projeto. Não são para uso direto — servem de referência para mesclar mudanças.
-- **ASU** — "Atualizador Automático de Scripts". Ferramenta separada do KCM que aplica modificações em arquivos de um projeto a partir de uma instrução YAML validada contra schema, com backup e rollback automático. Documentada em `meta/INSTRUCTION_GUIDE.md`. Usada para TODAS as mudanças de código deste projeto desde 2026-06-27.
-- **Instrução ASU** — o arquivo `.yaml` que descreve as modificações a aplicar. Convenção de nome deste projeto: `AAAA-MM-DD_NNN_descricao.yaml` (ver DEC-009 — desvio deliberado do padrão sugerido pelo kit).
-- **`replace_file`** — estratégia do ASU que substitui um arquivo inteiro (usada nos 3 ASUs deste projeto até agora, já que `JsonViewer.jsx` mudou estruturalmente a cada vez — ver "Feedback para o ASU" em IDEAS.md).
+- **ASU** — "Atualizador Automático de Scripts". Ferramenta separada do KCM que aplica modificações em arquivos de um projeto a partir de uma instrução YAML validada contra schema, com backup e rollback automático. Documentada em `meta/ASU/INSTRUCTION_GUIDE.md`. Usada para TODAS as mudanças de código deste projeto desde 2026-06-27.
+- **Instrução ASU** — o arquivo `.yaml` que descreve as modificações a aplicar. Convenção de nome (desde 2026-07-07): `AAMMDD-asuNNNN.yaml` (ex.: `260707-asu0003.yaml`) — padrão do kit; a descrição NÃO vai no nome (trade-off aceito, ver DEC-009 "Resolução"). Instruções antigas (`AAAA-MM-DD_NNN_descricao.yaml`) não foram renomeadas.
+- **`replace_file`** — estratégia do ASU que substitui um arquivo inteiro. Usada nos ASUs antigos e em `asu0001`/`asu0002` para o `JsonViewer.jsx`, que muda estruturalmente a cada sessão. Cuidado: no YAML usar bloco `|` simples; `|2` corrompe o conteúdo (ver CONTEXT).
+- **`replace_context_block`** — estratégia do ASU que troca só o miolo entre duas âncoras literais (`before`/`after`: únicas, indentação exata, de preferência ASCII); o `new_content` NÃO repete as âncoras. Usada em `asu0003` (`CsvViewer.jsx`) e `asu0004` (docs). Não serve na borda do arquivo.
 - **Doc rolante** — categoria de documento (STATUS, CHANGELOG, IDEAS, HISTORY) que é sempre entregue como arquivo inteiro, nunca como patch ASU, porque a edição neles é holística (mover item resolvido, reclassificar, checar que nada se perdeu).
+- **FlatDrop / `_MANIFEST_*.md` / `_TREE_*.md`** — ferramenta do usuário que achata o repositório para subir no Projeto (o `.flatdropignore` deixa `logs/` de fora) e gera um manifesto e uma árvore com data/hora. Úteis para saber o que o Projeto realmente contém (foi assim que se viu o `meta/HISTORICO.md` duplicado).
+- **HANDOFF-BRIEF** — `AAMMDD-HANDOFF-BRIEF.md`: arquivo novo colado como 1ª mensagem de uma conversa nova quando a atual ficou pesada. É um ATALHO de arranque, não a memória — se divergir dos docs de `meta/`, valem os docs (verificar no Projeto).
 
 ## Comandos
 - `npm run dev` — servidor de desenvolvimento em `http://localhost:5173`
@@ -52,5 +58,5 @@
 
 ## Identificadores
 - **FIX-N** — bug grave registrado em DECISIONS.md (FIX-001 = PDF ArrayBuffer, FIX-002 = CSV filtered edit)
-- **DEC-N** — decisão de arquitetura em DECISIONS.md (DEC-007 = GitHub Pages + Actions, DEC-008 = UX de tabelas grandes, DEC-009 = adoção da atualização do KCM)
+- **DEC-N** — decisão de arquitetura em DECISIONS.md (DEC-007 = GitHub Pages + Actions, DEC-008 = UX de tabelas grandes, DEC-009 = adoção da atualização do KCM + nomenclatura ASU, DEC-010 = debounce clique × duplo clique no ArrayTable)
 - **F1, F2…** — fases do ROADMAP

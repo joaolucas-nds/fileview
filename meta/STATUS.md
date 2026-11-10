@@ -6,8 +6,8 @@
 ---
 
 ## Versão Atual
-**[0.1.6]** — 2026-07-07 (pendente de aplicar) — CSV: navegação por Tab entre células durante a edição.
-*A versão do produto só passa a valer de fato depois que você aplicar `260707-asu0003.yaml` — este STATUS já reflete o estado PÓS-aplicação.*
+**[0.1.6]** — 2026-07-07 — CSV: navegação por Tab entre células durante a edição. **Confirmado aplicado** (o `CsvViewer.jsx` do snapshot do Projeto de 2026-11-06 contém `commitValue`/`commitAndMove`, o handler de Tab e o rodapé novo). O commit posterior `f626337` ("correcao asu0003", 2026-07-24) não foi inspecionado — ver Backlog.
+*Nenhuma versão nova do produto desde a 0.1.6: a sessão de 2026-11-07 foi só de handoff (documentação), sem mudança de código.*
 **[0.1.5]** — 2026-07-07 — JSON Formulário: edição inline no `RowDetailModal` e nas células do `ArrayTable`. **Confirmado aplicado** (conferido no disco: `JsonViewer.jsx` bate com o `260707-asu0002.yaml`).
 
 ## ✅ Funcionando
@@ -26,7 +26,7 @@
 - **Sistema de documentação (meta/):** CEREBRO.md + 9 docs + logs, na versão do Kit de Contexto Universal adotada em 2026-07-03 (DEC-009), agora com a pendência de nomenclatura ASU também resolvida (ver DECISIONS.md).
 
 ## 🔧 Em Progresso
-- Nada em andamento no momento além de aplicar o ASU desta sessão.
+- Nada em andamento no produto. A sessão de 2026-11-07 foi de transferência de contexto (handoff) — ver `261107-HANDOFF-BRIEF.md`.
 
 ## ❌ Quebrado / Com Problema
 - Nenhum bug conhecido no produto.
@@ -34,8 +34,12 @@
 ## 📋 Backlog (curto prazo — itens acionáveis)
 - [ ] **Busca Ctrl+F no SourceEditor** — highlight de ocorrências no textarea.
 - [ ] **Tooltips customizados** na toolbar do editor MD.
-- [ ] **Apagar `meta/HISTORICO.md` do Projeto Claude** depois de subir o `meta/HISTORY.md` novo — pendência antiga, ainda não confirmada como feita.
-- [ ] **Sincronizar a caixa "Instruções do Projeto" do Claude.ai** com o `PROJECT_INSTRUCTIONS.md` de `meta/` — sinalizado em 2026-07-07 (sessão 2), ainda não decidido/feito.
+- [ ] **Verificar o commit `f626337` ("correcao asu0003", 2026-07-24)** — não há log nem entrada no CHANGELOG sobre o que ele mudou. O `CsvViewer.jsx` do snapshot de 2026-11-06 contém a navegação Tab completa (+ uma linha em branco residual dentro do `onKeyDown`, entre os handlers de Tab e Escape — cosmético). Rodar `git show f626337 --stat` e registrar o que foi.
+- [ ] **Testar no navegador (nunca confirmado):** CSV — Tab/Shift+Tab (bordas, com filtro e ordenação ativos); JSON Formulário — edição inline em `Field`, células do `ArrayTable` e `RowDetailModal` (string, number, boolean, null, texto longo; sensação dos 220 ms do DEC-010). **Suspeita a confirmar:** número digitado inválido vira `NaN` em `parseEditedValue` e `JSON.stringify` grava `null`; `null` editado volta sempre `null`; boolean ≠ `"true"` vira `false` (ver IDEAS).
+- [ ] **Atualizar o `README.md` e decidir a versão do `package.json`** — README sem o modo Formulário, edição inline e Tab do CSV; `package.json` ainda em `0.1.0` (CHANGELOG está em 0.1.6). Decidir se a versão do package acompanha o CHANGELOG.
+- [ ] **Apagar `meta/HISTORICO.md`** — o `_TREE` de 2026-11-06 mostra o arquivo ainda no repo (e o Projeto também o lista), duplicata antiga do `HISTORY.md`. `git rm meta\HISTORICO.md` + remover do Projeto Claude.
+- [ ] **`PROJECT_INSTRUCTIONS.md` não está no repo nem no Projeto** (ausente do `_TREE`). A caixa "Instruções do Projeto" do Claude.ai já mostra `AAMMDD-asuNNNN.yaml` (parece sincronizada). Decidir se o arquivo versionado volta para `meta/` — se voltar, lembrar da armadilha dos dois arquivos de instrução em sincronia (CEREBRO × PROJECT_INSTRUCTIONS).
+
 
 ## 📁 Arquivos Críticos (não mexer sem contexto)
 - `src/context/AppContext.jsx` — estado global; PDFs devem ser Blob URL, nunca ArrayBuffer.
@@ -48,4 +52,4 @@
 - `meta/CEREBRO.md` — regras de comportamento; qualquer atualização do kit deve ser mesclada aqui, não sobrescrita.
 
 ## 💬 Última Sessão
-**2026-07-07 (sessão 3)** — Verificação confirmou que a sessão 2 (RowDetailModal + ArrayTable editáveis) foi aplicada corretamente — `JsonViewer.jsx`, `STATUS.md`, `CHANGELOG.md`, `DECISIONS.md`, `IDEAS.md`, `ROADMAP.md` e `PROJECT_INSTRUCTIONS.md` no disco batem byte a byte com o que foi entregue no `260707-asu0002.yaml` e no pacote meta correspondente — nenhuma pendência desta vez. Implementado o próximo item do backlog: **CSV — navegação por Tab entre células durante a edição** (Tab confirma e move para a próxima coluna, Shift+Tab volta; na borda de coluna, pula para a linha seguinte/anterior). Diferente das duas sessões anteriores, usado **`replace_context_block`** (patch cirúrgico) em vez de `replace_file`, porque o `CsvViewer.jsx` — ao contrário do `JsonViewer.jsx` — não vem mudando estruturalmente a cada sessão; a mudança em si também é pequena e localizada (2 funções + 1 linha de UI). A navegação respeita a ordem **visível** (`filtered` — filtro/ordenação atuais), não a ordem crua de `data`, pela mesma razão do FIX-002 (a posição que o usuário vê não é necessariamente a posição no array original). Antes de gerar o YAML, simulei a aplicação da instrução em Python contra o arquivo real do mount e comparei o resultado byte a byte com o arquivo esperado (além da validação de sintaxe via Babel) — mais rigoroso ainda que a checagem byte-a-byte usada nas sessões anteriores, porque aqui há 3 modificações cirúrgicas encadeadas (uma depender da anterior ter sido aplicada certo) em vez de uma reescrita única. Próximo passo: aplicar `260707-asu0003.yaml`, testar Tab/Shift+Tab num CSV com múltiplas colunas e linhas, incluindo os casos de borda (última coluna da última linha, primeira coluna da primeira linha).
+**2026-11-07 (sessão 4 — handoff)** — Sessão só de preparação para trocar de conversa; **nenhum código do produto foi alterado**. Entregues o `261107-HANDOFF-BRIEF.md` (arquivo novo; atalho de arranque — a memória continua nestes docs de `meta/`), este patch `261107-asu0004.yaml` e o log `logs/2026-11-07.md`. Por pedido explícito do usuário, STATUS/IDEAS foram atualizados por ASU em vez de arquivo inteiro (exceção à regra dos docs rolantes). Limitação: a sandbox não tinha o mount do Projeto — o estado foi lido via `project_read`; as âncoras do ASU foram simuladas só contra STATUS/IDEAS/DECISIONS (cópias em disco) e CONTEXT/GLOSSARY só tiveram as linhas-alvo conferidas, então **o dry-run do ASU é obrigatório**. Achados: `CsvViewer.jsx` já contém a navegação Tab (0.1.6 aplicada; o commit `f626337` "correcao asu0003" de 2026-07-24 não foi inspecionado); `DECISIONS.md` tinha perdido o cabeçalho `## FIX-001` (restaurado, título reconstruído do corpo); `meta/HISTORICO.md` segue no repo; `PROJECT_INSTRUCTIONS.md` não está no repo; CONTEXT/GLOSSARY estavam velhos (nomenclatura ASU, edição inline, Tab, layout de `meta/ASU/`) — atualizados. Último trabalho de produto: 2026-07-07 (sessão 3, CSV Tab, 0.1.6). Próximo passo: ver `261107-HANDOFF-BRIEF.md`.

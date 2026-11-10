@@ -205,6 +205,7 @@ Clique simples numa linha agora tem ~220ms de atraso perceptível apenas em test
 Campos do tipo `string` no `RowDetailModal` editam via `<textarea>` (não `<input>` como o Field/JsonNode), porque o próprio motivo do modal existir (DEC-008) é acomodar texto longo (`text_content` e afins) — um input de uma linha só seria ruim para esse caso. Como consequência, `Enter` num campo string insere quebra de linha em vez de confirmar (comportamento nativo de `<textarea>`); só `Esc` cancela ou o `blur` confirma. Campos `number`/`boolean`/`null` seguem o padrão do resto do projeto (`Enter` confirma), já que não têm o mesmo problema de texto longo.
 
 ---
+## FIX-001 — PDF: ArrayBuffer detachado ao remontar o viewer
 **Data:** 2026-06-05
 
 - **Sintoma:** `⚠ Erro ao abrir PDF: Failed to execute 'postMessage' on 'Worker': ArrayBuffer at index 0 is already detached.`
