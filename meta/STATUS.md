@@ -36,9 +36,11 @@
 - [ ] **Busca Ctrl+F no SourceEditor** — highlight de ocorrências no textarea.
 - [ ] **Tooltips customizados** na toolbar do editor MD.
 - [ ] **Testar no navegador (nunca confirmado):** CSV — Tab/Shift+Tab (bordas, com filtro e ordenação ativos); JSON Formulário — edição inline em `Field`, células do `ArrayTable` e `RowDetailModal` (string, number, boolean, null, texto longo; sensação dos 220 ms do DEC-010). **Suspeita a confirmar:** número digitado inválido vira `NaN` em `parseEditedValue` e `JSON.stringify` grava `null`; `null` editado volta sempre `null`; boolean ≠ `"true"` vira `false` (ver IDEAS).
-- [ ] **Atualizar o `README.md` e decidir a versão do `package.json`** — README sem o modo Formulário, edição inline e Tab do CSV; `package.json` ainda em `0.1.0` (CHANGELOG está em 0.1.7). Decidir se a versão do package acompanha o CHANGELOG.
+- [ ] **Atualizar o `README.md` e decidir a versão do `package.json`** — README sem o modo Formulário, edição inline e Tab do CSV; `package.json` ainda em `0.1.0` (CHANGELOG está em 0.1.8). Decidir se a versão do package acompanha o CHANGELOG.
 
 ## 💬 Última conversa
+**2026-11-11 (chat + Code, wo0003)** — DEC-012: PDF no visualizador nativo do navegador (`<iframe>`), `pdfjs-dist` removido (commit `3b9cea3`, empurrado), versão 0.1.8. Build verde; conferência na tela pendente (roteiro do dono). Detalhe em `logs/2026-11-11.md`.
+
 **2026-11-11 (chat + Code, wo0002)** — FIX-003: `key={activeFile.id}` em `ViewerRouter.jsx` (commit `3d108e5`, empurrado), versão 0.1.7. Build verde; conferência na tela pendente (roteiro do dono). Voltar a uma aba reabre do topo; lembrar a posição virou ideia no IDEAS. Detalhe em `logs/2026-11-11.md`.
 
 **2026-11-10 (anterior, chat)** — Só processo, **nenhum código do produto alterado**. Merge do KCM v1.135.0 + migração ASU → modo Code (DEC-011): `CLAUDE.md`, `.claude/`, `INSTRUCOES-DO-PROJETO.md` (commit `6925a88`); CEREBRO/CONTEXT/GLOSSARY/LOG-TEMPLATE/.gitignore/.flatdropignore reescritos pelo chat e versionados por esta wo0001; `meta/ASU/` fora do repo. Resolvidos de passagem: `f626337` era só docs (`git show --stat`), `HISTORICO.md` já tinha saído, `PROJECT_INSTRUCTIONS.md` virou `INSTRUCOES-DO-PROJETO.md`. Próximo passo: escolher a frente de produto — o bug do scroll por aba (Quebrado) é candidato. Detalhe em `logs/2026-11-10.md`.
