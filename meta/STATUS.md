@@ -26,7 +26,7 @@
 - **Sistema de documentação (meta/) — modo Code desde 2026-11-10 (DEC-011):** CEREBRO.md (base KCM v1.135.0) + 10 docs + `SPEC.md` + `workorders/` + logs; `CLAUDE.md`, `.claude/` (skills `/apply-wo`, `/wrap`, `/sondar`) e `INSTRUCOES-DO-PROJETO.md` na raiz. ASU desligado.
 
 ## 🔧 Em Progresso
-- Nada em andamento no produto. A conversa de 2026-11-10 foi de processo: merge do KCM v1.135.0 e migração ASU → Code (esta wo0001 é o registro).
+- Nada em andamento no produto. A 0.1.7 (FIX-003, commit `3d108e5`) está no ar; falta só a conferência na tela pelo dono.
 
 ## ❌ Quebrado / Com Problema
 - Nenhum bug conhecido no produto.
@@ -34,8 +34,10 @@
 ## 📋 Backlog (curto prazo — itens acionáveis)
 - [ ] **Busca Ctrl+F no SourceEditor** — highlight de ocorrências no textarea.
 - [ ] **Tooltips customizados** na toolbar do editor MD.
-- [ ] **Testar no navegador (nunca confirmado):** CSV — Tab/Shift+Tab (bordas, com filtro e ordenação ativos); JSON Formulário — edição inline em `Field`, células do `ArrayTable` e `RowDetailModal` (string, number, boolean, null, texto longo; sensação dos 220 ms do DEC-010). **Suspeita a confirmar:** número digitado inválido vira `NaN` em `parseEditedValue` e `JSON.stringify` grava `null`; `null` editado volta sempre `null`; boolean ≠ `"true"` vira `false` (ver IDEAS).
-- [ ] **Atualizar o `README.md` e decidir a versão do `package.json`** — README sem o modo Formulário, edição inline e Tab do CSV; `package.json` ainda em `0.1.0` (CHANGELOG está em 0.1.6). Decidir se a versão do package acompanha o CHANGELOG.
+- [ ] **Testar no navegador (nunca confirmado):** abas (FIX-003) — abrir 2 arquivos do mesmo tipo, rolar um e trocar: o outro abre no topo, sem filtro/zoom do primeiro; CSV — Tab/Shift+Tab (bordas, com filtro e ordenação ativos); JSON Formulário — edição inline em `Field`, células do `ArrayTable` e `RowDetailModal` (string, number, boolean, null, texto longo; sensação dos 220 ms do DEC-010). **Suspeita a confirmar:** número digitado inválido vira `NaN` em `parseEditedValue` e `JSON.stringify` grava `null`; `null` editado volta sempre `null`; boolean ≠ `"true"` vira `false` (ver IDEAS).
+- [ ] **Atualizar o `README.md` e decidir a versão do `package.json`** — README sem o modo Formulário, edição inline e Tab do CSV; `package.json` ainda em `0.1.0` (CHANGELOG está em 0.1.7). Decidir se a versão do package acompanha o CHANGELOG.
 
 ## 💬 Última conversa
-**2026-11-10 (chat, com a pasta vinculada)** — Só processo, **nenhum código do produto alterado**. Merge do KCM v1.135.0 + migração ASU → modo Code (DEC-011): `CLAUDE.md`, `.claude/`, `INSTRUCOES-DO-PROJETO.md` (commit `6925a88`); CEREBRO/CONTEXT/GLOSSARY/LOG-TEMPLATE/.gitignore/.flatdropignore reescritos pelo chat e versionados por esta wo0001; `meta/ASU/` fora do repo. Resolvidos de passagem: `f626337` era só docs (`git show --stat`), `HISTORICO.md` já tinha saído, `PROJECT_INSTRUCTIONS.md` virou `INSTRUCOES-DO-PROJETO.md`. Próximo passo: escolher a frente de produto — o bug do scroll por aba (Quebrado) é candidato. Detalhe em `logs/2026-11-10.md`.
+**2026-11-11 (chat + Code, wo0002)** — FIX-003: `key={activeFile.id}` em `ViewerRouter.jsx` (commit `3d108e5`, empurrado), versão 0.1.7. Build verde; conferência na tela pendente (roteiro do dono). Voltar a uma aba reabre do topo; lembrar a posição virou ideia no IDEAS. Detalhe em `logs/2026-11-11.md`.
+
+**2026-11-10 (anterior, chat)** — Só processo, **nenhum código do produto alterado**. Merge do KCM v1.135.0 + migração ASU → modo Code (DEC-011): `CLAUDE.md`, `.claude/`, `INSTRUCOES-DO-PROJETO.md` (commit `6925a88`); CEREBRO/CONTEXT/GLOSSARY/LOG-TEMPLATE/.gitignore/.flatdropignore reescritos pelo chat e versionados por esta wo0001; `meta/ASU/` fora do repo. Resolvidos de passagem: `f626337` era só docs (`git show --stat`), `HISTORICO.md` já tinha saído, `PROJECT_INSTRUCTIONS.md` virou `INSTRUCOES-DO-PROJETO.md`. Próximo passo: escolher a frente de produto — o bug do scroll por aba (Quebrado) é candidato. Detalhe em `logs/2026-11-10.md`.
