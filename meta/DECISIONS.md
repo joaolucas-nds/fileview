@@ -143,7 +143,7 @@ No `CardLayout`, seções que são arrays de objetos (tabelas) ganham `gridColum
 ---
 
 ## DEC-009 — Adoção da atualização do Kit de Contexto Universal (KCM) de 2026-07-03
-**Data:** 2026-07-03 · **Status:** aceita (com uma pergunta em aberto para o usuário)
+**Data:** 2026-07-03 · **Status:** aceita (pergunta em aberto resolvida em 2026-07-07; a parte de ASU foi substituída por DEC-011 em 2026-11-10)
 
 ### Contexto
 O KCM — o kit de templates que gera e mantém `meta/CEREBRO.md` e os demais docs de contexto deste projeto — recebeu uma atualização (arquivos `*__template-update.md`/`.txt` subidos ao Projeto). Pedido do usuário: ler, comparar, estudar, adaptar e atualizar o projeto, e gerar uma versão atualizada das Instruções do Projeto.
@@ -205,8 +205,31 @@ Clique simples numa linha agora tem ~220ms de atraso perceptível apenas em test
 Campos do tipo `string` no `RowDetailModal` editam via `<textarea>` (não `<input>` como o Field/JsonNode), porque o próprio motivo do modal existir (DEC-008) é acomodar texto longo (`text_content` e afins) — um input de uma linha só seria ruim para esse caso. Como consequência, `Enter` num campo string insere quebra de linha em vez de confirmar (comportamento nativo de `<textarea>`); só `Esc` cancela ou o `blur` confirma. Campos `number`/`boolean`/`null` seguem o padrão do resto do projeto (`Enter` confirma), já que não têm o mesmo problema de texto longo.
 
 ---
+## DEC-011 — Migração do modo ASU para o modo Code (KCM v1.135.0)
+**Data:** 2026-11-10 · **Status:** aceita
+
+### Contexto
+Desde 2026-06-27 toda mudança de código saía do chat como patch ASU (`.yaml`) que o dono aplicava à mão, e os docs iam inteiros para baixar; o Projeto do claude.ai era alimentado pelo FlatDrop. O template-update do KCM v1.135.0 chegou gerado com `Code sim · ASU nao`, o que não batia com o projeto — o chat parou antes de comparar. O dono confirmou: a mudança de forma de trabalho é de propósito. O chat passa a ler e gravar direto na pasta do projeto (app desktop com a pasta vinculada) e o Claude Code passa a executar no repositório.
+
+### Decisão
+Modo Code, ASU desligado. Divisão de quem escreve (padrão do kit, adotado sem desvio):
+- **Chat** escreve inteiros: `meta/CEREBRO.md`, `meta/CONTEXT.md`, `meta/GLOSSARY.md`, `meta/LOG-TEMPLATE.md`, `INSTRUCOES-DO-PROJETO.md`, `.claude/settings.json`, análises e WOs; cria o log do dia quando ele não existe. Git pelo chat é só leitura.
+- **Code** escreve código, `meta/STATUS.md`, `meta/DECISIONS.md`, `meta/CHANGELOG.md` (append) e a sua seção do log; roda o build; commita e empurra.
+- `meta/IDEAS.md`, `meta/HISTORY.md`, `meta/ROADMAP.md` e todo doc grande e vivo mudam por WO.
+- As Instruções do Projeto têm fonte no repo (`INSTRUCOES-DO-PROJETO.md`); o painel do claude.ai é cópia. FlatDrop vira canal de reserva.
+
+### Alternativas consideradas
+- **Manter o ASU** — descartada pelo dono: o chat com a pasta vinculada já grava no disco, e o patch `.yaml` aplicado à mão virou passo a mais.
+- **Híbrido ASU + Code** — descartada: duas formas de mudar código no mesmo repo são dois escritores sem regra; o kit orça o ASU como modo próprio.
+- **Regerar o pacote com `ASU sim`** — perdeu o sentido quando o dono decidiu migrar.
+
+### Consequências
+Commit `6925a88` instalou as superfícies do Code e tirou `meta/ASU/` do repo (os 4 arquivos foram para `../_para-excluir-asu/`). As armadilhas do ASU viraram histórico (HISTORY.md §5). O CEREBRO cresceu de ~36 KB para ~106 KB (base genérica do kit v1.135.0) — o que é deste projeto mora em «Técnicas específicas». Push na `main` continua sendo deploy em produção, agora feito pelo Code.
+
+---
+
 ## FIX-001 — PDF: ArrayBuffer detachado ao remontar o viewer
-**Data:** 2026-06-05
+**Data:** 2026-06-05 · **Status:** resolvida
 
 - **Sintoma:** `⚠ Erro ao abrir PDF: Failed to execute 'postMessage' on 'Worker': ArrayBuffer at index 0 is already detached.`
 - **Causa raiz:** PDF.js v4 usa `postMessage` com `transfer` do ArrayBuffer para o worker thread — detacha o buffer do main thread permanentemente. Na remontagem, `activeFile.content` está morto.
@@ -217,7 +240,7 @@ Campos do tipo `string` no `RowDetailModal` editam via `<textarea>` (não `<inpu
 ---
 
 ## FIX-002 — CSV: edição-enquanto-filtrado descartava linhas fora do filtro
-**Data:** 2026-06-05
+**Data:** 2026-06-05 · **Status:** resolvida
 
 - **Sintoma:** Filtrar + editar + salvar descartava as linhas fora do filtro.
 - **Causa raiz:** `commitEdit` reconstruía o CSV a partir do array `filtered` (derivado), não do `data` original.

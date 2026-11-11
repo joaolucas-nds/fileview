@@ -1,8 +1,10 @@
 # CONTEXT.md — FileView
 
-> Arquivo **estável**. Lido no início de cada sessão para ambientar o assistente.
+> Arquivo **estável**. Lido ao abrir cada conversa para ambientar o assistente.
 > Muda só em alteração estrutural (stack, arquitetura, nova armadilha descoberta).
-> Revisão base de 2026-07-03, atualizada pontualmente em 2026-11-07 (edição inline do JsonViewer, Tab do CsvViewer, nomenclatura ASU, layout real de `meta/` e `logs/`). Escrita com detalhe máximo propositalmente — é o handoff para uma conversa nova sem histórico.
+> Revisão base de 2026-07-03, atualizada em 2026-11-07 (edição inline do JsonViewer, Tab do CsvViewer) e em 2026-11-10 (migração ASU → Code, DEC-011). Escrita com detalhe máximo propositalmente — é o handoff para uma conversa nova sem histórico.
+
+> **Mudanças nesta revisão (2026-11-10):** (1) árvore do projeto atualizada — entram `CLAUDE.md`, `INSTRUCOES-DO-PROJETO.md`, `.claude/`, `.flatdropignore`, `meta/SPEC.md`, `meta/workorders/`; saem `meta/ASU/` (movido para fora do repo) e `meta/HISTORICO.md` (já apagado); (2) a seção «Sobre o sistema de documentação» foi reescrita para o modo Code; (3) as sub-armadilhas do ASU saíram daqui para HISTORY.md §5 (o ASU foi desligado, o conhecimento fica como histórico); (4) **«📁 Arquivos Críticos» veio do STATUS para cá** — é conhecimento estável, e o template do kit o põe no CONTEXT; (5) «sessão» → «conversa/dia» onde a frase manda fazer algo.
 
 ---
 
@@ -40,6 +42,12 @@ fileview/
 ├── index.html                  # <div id="root"> + <script src="/src/main.jsx">
 ├── README.md
 ├── .gitignore
+├── .flatdropignore             # canal de reserva (FlatDrop): o que NÃO sobe ao Projeto do Claude
+├── CLAUDE.md                   # guia raiz do Claude Code (build, convenções, push, relatório)
+├── INSTRUCOES-DO-PROJETO.md    # FONTE das Instruções do Projeto (o painel do claude.ai é cópia)
+├── .claude/
+│   ├── settings.json           # permissões do Claude Code (inclui additionalDirectories "../")
+│   └── skills/                 # /apply-wo · /wrap · /sondar (SKILL.md cada)
 ├── .github/
 │   └── workflows/
 │       └── deploy.yml          # GitHub Actions: npm ci && npm run build → dist/ → Pages. Node 24.
@@ -53,21 +61,19 @@ fileview/
 │   ├── ROADMAP.md                     # plano por fases
 │   ├── GLOSSARY.md                     # termos do projeto
 │   ├── HISTORY.md                       # conhecimento consolidado — renomeado de HISTORICO.md em 2026-07-03
-│   ├── LOG-TEMPLATE.md                  # molde do log de sessão (referência fixa)
-│   ├── ASU/                               # material da ferramenta ASU (não é doc do kit)
-│   │   ├── INSTRUCTION_GUIDE.md           # guia COMPLETO do formato ASU
-│   │   ├── PROMPT_IA.md                    # bloco resumido de instrução para colar em outros projetos
-│   │   ├── GUIA_PASSO_A_PASSO.md           # passo a passo de uso do ASU
-│   │   └── demo.yaml                       # exemplo executável do ASU (fictício, não faz parte do Fileview)
-│   └── HISTORICO.md                       # DUPLICATA antiga de HISTORY.md — ainda no repo em 2026-11-06; apagar (ver STATUS)
-├── logs/                        # logs de sessão — vivem no Git, NÃO sobem no conhecimento do Projeto (lidos sob demanda)
+│   ├── LOG-TEMPLATE.md                  # molde do log do dia (referência fixa)
+│   ├── SPEC.md                            # modelo de spec de feature (o QUÊ); specs reais nascem em specs/ sob demanda
+│   └── workorders/                        # WOs AAMMDD-woNNNN-desc.md (o chat autora, o Code aplica)
+│       └── _TEMPLATE.md                   # modelo de WO
+├── logs/                        # logs do dia — vivem no Git, NÃO sobem no conhecimento do Projeto (lidos sob demanda)
 │   ├── 2026-06-05.md
 │   ├── 2026-06-25.md
 │   ├── 2026-06-28.md
 │   ├── 2026-07-01.md
 │   ├── 2026-07-03.md
-│   ├── 2026-07-07.md              # 3 sessões no mesmo dia (ASU 0001–0003)
-│   └── 2026-11-07.md              # handoff (preparação de transferência de conversa)
+│   ├── 2026-07-07.md              # 3 conversas no mesmo dia (ASU 0001–0003)
+│   ├── 2026-11-07.md              # handoff (preparação de transferência de conversa)
+│   └── 2026-11-10.md              # merge do KCM v1.135.0 + migração ASU → Code
 └── src/
     ├── main.jsx                   # ReactDOM.createRoot + <App/> dentro de <React.StrictMode>
     ├── App.jsx                     # layout: <Sidebar/> + tab bar + mode switcher + <ViewerRouter/>; define mdModes/structModes/csvModes/jsonModes
@@ -199,15 +205,28 @@ Transforma o JSON num formulário visual. Pipeline:
 
 **Sub-armadilha de interação (DEC-010):** o DOM dispara `click` DUAS vezes antes do `dblclick`. Qualquer UI que combine "clique simples faz X" com "duplo clique dentro dele faz Y" precisa desambiguar (timer que o 2º clique cancela, ou outro gatilho para X). No `ArrayTable` é o `ROW_CLICK_DELAY`.
 
-**Sub-armadilhas do ASU (aprendidas em 2026-07-07):** (a) em `replace_file`, use bloco `|` simples — o indicador `|2` deslocou o conteúdo 2 espaços e corrompeu o arquivo SEM erro; (b) bater o `new_content` byte a byte com o fonte não prova que o fonte é JS válido — rodar o Babel (`transformSync` + `@babel/preset-react`; em Babel 8 `transform` é assíncrono); (c) com várias modificações encadeadas no mesmo arquivo, simular a instrução INTEIRA em sequência, não cada âncora isolada; (d) âncoras em ASCII (usar `.*`/`.+` no lugar de ã, —, setas, box-drawing); (e) quando uma convenção vive em dois arquivos de instrução (CEREBRO × PROJECT_INSTRUCTIONS), conferir os dois.
+## Sobre o sistema de documentação (meta/) e o modo de trabalho
 
-## Sobre o sistema de documentação (meta/) e o workflow ASU
+Este projeto usa o **Kit de Contexto Universal (KCM)** para manter continuidade entre conversas (cada conversa nova começa sem memória; os arquivos em `meta/` são o "disco" persistente). O comportamento completo do assistente está em `meta/CEREBRO.md` — não repita aqui, é lido à parte.
 
-Este projeto usa o **Kit de Contexto Universal (KCM)** para manter continuidade entre sessões de conversa (cada conversa nova começa sem memória; os arquivos em `meta/` são o "disco" persistente). O comportamento completo do assistente está em `meta/CEREBRO.md` — não repita aqui, é lido à parte.
+**Modo Code desde 2026-11-10 (DEC-011)** — duas raias:
+- **Chat (planejamento):** lê e grava direto na pasta do projeto pelo app desktop (pasta vinculada: a pasta-pai `fileview\`, que contém o repo). Escreve inteiros CEREBRO, CONTEXT, GLOSSARY, `INSTRUCOES-DO-PROJETO.md`, LOG-TEMPLATE, análises e WOs. Git pelo chat é só leitura (`GIT_OPTIONAL_LOCKS=0`).
+- **Claude Code (execução):** implementa código, roda `npm run build`, aplica WOs (`/apply-wo`), fecha tarefa (`/wrap`), escreve STATUS/DECISIONS/CHANGELOG (append) e commita/empurra. Relatório de trabalho vai para `../AAMMDD-HHMM-code-fileview-<ato>-<alvo>.txt`.
+- IDEAS e todo doc grande e vivo mudam por WO. A divisão está em DEC-011.
 
-Mudanças de **código** neste projeto são entregues como instruções **ASU** (Atualizador Automático de Scripts) — um YAML que aplica patches cirúrgicos com backup e rollback automático, em vez de arquivos inteiros reescritos à mão. O formato é documentado em `meta/ASU/INSTRUCTION_GUIDE.md` (autocontido, com exemplo completo, tabela de estratégias, seis regras de ouro, tabela de correção de erros). Convenção de nome (desde 2026-07-07, DEC-009): `AAMMDD-asuNNNN.yaml` (ex.: `260707-asu0003.yaml` — data compacta + sequência GLOBAL de 4 dígitos, sem descrição no nome; ASUs antigos não foram renomeados). Escolha da estratégia: `replace_file` para o que muda estruturalmente a cada sessão (`JsonViewer.jsx`); `replace_context_block`/patches para arquivo estável (`CsvViewer.jsx`).
+O ASU (patches `.yaml`) foi usado de 2026-06-27 a 2026-11-07 e está desligado; o histórico e as armadilhas aprendidas estão em HISTORY.md §5. O FlatDrop (cópia achatada para o Projeto do claude.ai) virou **canal de reserva** — só para quando a conversa roda sem a pasta vinculada.
 
-Documentos **rolantes** (STATUS, CHANGELOG, IDEAS, HISTORY) são sempre entregues como arquivo completo, nunca como ASU — a edição neles é holística (mover item resolvido, reclassificar, checar que nada se perdeu), o que um patch cirúrgico não capta.
+## 📁 Arquivos Críticos (não mexer sem contexto)
+> Conhecimento estável — veio do STATUS em 2026-11-10.
+- `src/context/AppContext.jsx` — estado global; PDFs devem ser Blob URL, nunca ArrayBuffer.
+- `src/editors/MarkdownEditor.jsx` — configuração Tiptap; `StarterKit.configure({ codeBlock: false })` obrigatório.
+- `src/App.css` — todas as CSS vars e classes `.md-output`/`.tiptap-editor`; mudança reflete em tudo.
+- `src/viewers/JsonViewer.jsx` — Árvore + FormView (Cards/Tabs/Painel) + ArrayTable (paginação+modal, ambos editáveis desde 0.1.5) + edição inline do Field. `parseSections`/`SectionContent` compartilhados pelos 3 layouts; `handleUpdate` (no componente principal) é a mesma função usada por TODOS os pontos de edição (Árvore, Field, células do ArrayTable, RowDetailModal) — path dotted, incluindo índice de array quando aplicável. `ROWS_PER_PAGE = 20` controla a paginação; `ROW_CLICK_DELAY = 220` (ms) resolve o conflito clique-abre-modal vs duplo-clique-edita-célula (ver DEC-010).
+- `src/viewers/CsvViewer.jsx` — `commitValue` extraída de `commitEdit` (0.1.6) para ser reaproveitada por `commitAndMove`, que resolve a navegação por Tab; navega sobre `filtered` (ordem visível), não sobre `data` cru — mesmo cuidado do FIX-002 aplicado à navegação, não só à gravação.
+- `vite.config.js` — `base: './'` obrigatório para GitHub Pages; não remover.
+- `.github/workflows/deploy.yml` — pipeline de deploy automático; node-version 24; não remover. Push na `main` = produção.
+- `meta/CEREBRO.md` — regras de comportamento; qualquer atualização do kit deve ser mesclada aqui, não sobrescrita.
+- `.claude/settings.json` — permissões do Code; o Code não edita o próprio settings (o chat entrega inteiro).
 
 ## Contexto de Produto
 - **Usuário-alvo:** desenvolvedor solo (o autor deste projeto) que lida com `.md`, `.json`, `.csv`, configs no dia a dia e quer uma experiência visual melhor que abrir esses arquivos crus no VS Code.

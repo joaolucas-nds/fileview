@@ -1,7 +1,9 @@
 # GLOSSARY.md — Termos do Projeto FileView
 
-> Termos próprios que o assistente reexplicaria a cada sessão sem este arquivo.
+> Termos próprios que o assistente reexplicaria a cada conversa sem este arquivo.
 > Só o que não é óbvio para alguém de fora.
+
+> **Mudanças nesta revisão (2026-11-10, DEC-011):** a seção «Kit de Contexto e ASU» virou «Kit de Contexto e modo Code». Os quatro termos do ASU (ASU, Instrução ASU, `replace_file`, `replace_context_block`) e «Doc rolante» (regra que só existia por causa do ASU) foram condensados numa entrada histórica — o detalhe está em HISTORY.md §5. Saíram os três comandos `python -m src ...` do ASU. Entraram WO, `/apply-wo`, `/wrap`, `/sondar`, raia, relatório de trabalho e `INSTRUCOES-DO-PROJETO.md`.
 
 ---
 
@@ -24,28 +26,28 @@
 - **ViewerRouter** — `src/components/ViewerRouter.jsx`. Lê `activeFile.ext` + `activeMode` e monta o componente correto via `React.lazy + Suspense`.
 - **tiptap-markdown** — Extensão community do Tiptap que adiciona serialização Markdown↔Tiptap bidirecional. Saída MD via `editor.storage.markdown.getMarkdown()`.
 - **Design tokens** — variáveis CSS em `:root` em `App.css` (ex: `--accent`, `--border`, `--font-mono`). Usadas via `var(--token)` em todos os `style={{}}` inline dos componentes.
-- **CEREBRO.md** — arquivo de instrução do assistente (regras de comportamento, ritual de início de sessão, gatilhos). Vive em `meta/`. Renomeado de CLAUDE.md em 2026-06-25.
+- **CEREBRO.md** — arquivo de instrução do assistente (regras de comportamento, ritual de turno, gatilhos). Vive em `meta/`. Renomeado de CLAUDE.md em 2026-06-25.
 - **GitHub Actions** — pipeline de CI/CD do GitHub que roda `.github/workflows/deploy.yml` a cada push na main. Faz o build do Vite e publica o `dist/` no GitHub Pages automaticamente, sem necessidade de build local ou push manual.
 
-## Kit de Contexto e ASU (termos de processo, não do produto)
-- **KCM** — "Kit de Contexto Universal" (ou nome equivalente usado pelo usuário) — o conjunto de templates que originou `CEREBRO.md` e os demais arquivos de `meta/`. Evolui com o tempo; quando atualizado, os arquivos `*__template-update.md`/`.txt` são trazidos ao Projeto para comparação e adoção (ver DEC-009).
-- **template-update** — sufixo usado nos arquivos que representam a versão NOVA de um template do KCM, trazida para comparação com a versão em uso no projeto. Não são para uso direto — servem de referência para mesclar mudanças.
-- **ASU** — "Atualizador Automático de Scripts". Ferramenta separada do KCM que aplica modificações em arquivos de um projeto a partir de uma instrução YAML validada contra schema, com backup e rollback automático. Documentada em `meta/ASU/INSTRUCTION_GUIDE.md`. Usada para TODAS as mudanças de código deste projeto desde 2026-06-27.
-- **Instrução ASU** — o arquivo `.yaml` que descreve as modificações a aplicar. Convenção de nome (desde 2026-07-07): `AAMMDD-asuNNNN.yaml` (ex.: `260707-asu0003.yaml`) — padrão do kit; a descrição NÃO vai no nome (trade-off aceito, ver DEC-009 "Resolução"). Instruções antigas (`AAAA-MM-DD_NNN_descricao.yaml`) não foram renomeadas.
-- **`replace_file`** — estratégia do ASU que substitui um arquivo inteiro. Usada nos ASUs antigos e em `asu0001`/`asu0002` para o `JsonViewer.jsx`, que muda estruturalmente a cada sessão. Cuidado: no YAML usar bloco `|` simples; `|2` corrompe o conteúdo (ver CONTEXT).
-- **`replace_context_block`** — estratégia do ASU que troca só o miolo entre duas âncoras literais (`before`/`after`: únicas, indentação exata, de preferência ASCII); o `new_content` NÃO repete as âncoras. Usada em `asu0003` (`CsvViewer.jsx`) e `asu0004` (docs). Não serve na borda do arquivo.
-- **Doc rolante** — categoria de documento (STATUS, CHANGELOG, IDEAS, HISTORY) que é sempre entregue como arquivo inteiro, nunca como patch ASU, porque a edição neles é holística (mover item resolvido, reclassificar, checar que nada se perdeu).
-- **FlatDrop / `_MANIFEST_*.md` / `_TREE_*.md`** — ferramenta do usuário que achata o repositório para subir no Projeto (o `.flatdropignore` deixa `logs/` de fora) e gera um manifesto e uma árvore com data/hora. Úteis para saber o que o Projeto realmente contém (foi assim que se viu o `meta/HISTORICO.md` duplicado).
-- **HANDOFF-BRIEF** — `AAMMDD-HANDOFF-BRIEF.md`: arquivo novo colado como 1ª mensagem de uma conversa nova quando a atual ficou pesada. É um ATALHO de arranque, não a memória — se divergir dos docs de `meta/`, valem os docs (verificar no Projeto).
+## Kit de Contexto e modo Code (termos de processo, não do produto)
+- **KCM** — "Kit de Contexto Universal" — o conjunto de templates que originou `CEREBRO.md` e os demais arquivos de `meta/`. Evolui com o tempo; quando atualizado, chega à pasta-pai como `AAMMDD-kcm-update-vX.Y.Z/` (ver DEC-009 e DEC-011).
+- **template-update** — sufixo usado nos arquivos que representam a versão NOVA de um template do KCM, trazida para comparação com a versão em uso no projeto. Não são para uso direto — servem de referência para mesclar mudanças. O `_UPDATE-MANIFEST.md` do pacote dá o destino real de cada um, as linhas revogadas e o carimbo de modos.
+- **Raia** — quem faz o quê: **chat** (planejamento — autora docs de curadoria, análises e WOs) e **Claude Code** (execução — código, build, appends nos meta/, commit/push). A divisão de documentos está em DEC-011.
+- **WO (work order)** — instrução de APLICAÇÃO escrita pelo chat em `meta/workorders/AAMMDD-woNNNN-desc.md` (âncora literal + texto exato); o Code só posiciona. Numeração sequencial global; modelo em `meta/workorders/_TEMPLATE.md`. Spec diz O QUE construir; WO diz COMO aplicar.
+- **`/apply-wo` · `/wrap` · `/sondar`** — skills do Claude Code em `.claude/skills/`: aplicar uma WO (âncora exata ou PARA e reporta) · fechar a tarefa (append em STATUS/DECISIONS, log do dia, commit e push) · exploração sem hipótese prévia (devolve candidatos, nunca veredito).
+- **Relatório de trabalho** — `../AAMMDD-HHMM-code-fileview-<ato>-<alvo>.txt`, na pasta-pai (fora do Git), que o Code grava ao fechar cada tarefa. `<ato>` ∈ apply · wrap · probe · explore.
+- **`INSTRUCOES-DO-PROJETO.md`** — fonte das Instruções do Projeto, na raiz do repo; o painel do claude.ai é cópia colada à mão. Teto: 7.600 caracteres com o modo Code.
+- **FlatDrop / `_MANIFEST_*.md` / `_TREE_*.md`** — ferramenta do usuário que achata o repositório para subir no Projeto do claude.ai e gera um manifesto e uma árvore. Desde 2026-11-10 é **canal de reserva** (o chat trabalha direto na pasta); o `.flatdropignore` deixa `logs/*` e as WOs de fora.
+- **HANDOFF-BRIEF** — `AAMMDD-HANDOFF-BRIEF.md`: atalho de arranque para uma conversa nova, nunca versionado. Se divergir dos docs de `meta/`, valem os docs. Depois de absorvido, vai para `zz_notas-arquivadas/`.
+- **ASU (histórico)** — "Atualizador Automático de Scripts": ferramenta de patches `.yaml` (`AAMMDD-asuNNNN.yaml`; estratégias `replace_file`, `replace_context_block`) usada em todas as mudanças de código de 2026-06-27 a 2026-11-07. **Desligada em 2026-11-10 (DEC-011).** Armadilhas e convenções: HISTORY.md §5.
 
 ## Comandos
 - `npm run dev` — servidor de desenvolvimento em `http://localhost:5173`
 - `npm run build` — bundle otimizado em `dist/` (para deploy)
 - `npm run preview` — serve o build localmente antes de deploy
 - `npm install --legacy-peer-deps` — se houver conflito de peer deps entre pacotes Tiptap
-- `python -m src apply <arquivo>.yaml --root <RAIZ> --dry-run` — aplica uma instrução ASU em modo de revisão (sem gravar)
-- `python -m src apply <arquivo>.yaml --root <RAIZ>` — aplica a instrução ASU de verdade
-- `python -m src rollback <TIMESTAMP> --root <RAIZ>` — desfaz a última aplicação ASU
+- `/apply-wo meta/workorders/<arquivo>.md` — no Claude Code: aplica uma WO
+- `/wrap` — no Claude Code: fecha a tarefa (STATUS/DECISIONS, log, commit, push)
 
 ## Deploy no GitHub Pages (passo a passo)
 1. Garantir que `vite.config.js` tem `base: './'`.
@@ -58,5 +60,6 @@
 
 ## Identificadores
 - **FIX-N** — bug grave registrado em DECISIONS.md (FIX-001 = PDF ArrayBuffer, FIX-002 = CSV filtered edit)
-- **DEC-N** — decisão de arquitetura em DECISIONS.md (DEC-007 = GitHub Pages + Actions, DEC-008 = UX de tabelas grandes, DEC-009 = adoção da atualização do KCM + nomenclatura ASU, DEC-010 = debounce clique × duplo clique no ArrayTable)
+- **DEC-N** — decisão de arquitetura em DECISIONS.md (DEC-007 = GitHub Pages + Actions, DEC-008 = UX de tabelas grandes, DEC-009 = adoção da atualização do KCM + nomenclatura ASU, DEC-010 = debounce clique × duplo clique no ArrayTable, DEC-011 = migração ASU → modo Code)
+- **woNNNN** — número sequencial global de WO em `meta/workorders/` (a primeira é `wo0001`, de 2026-11-10)
 - **F1, F2…** — fases do ROADMAP

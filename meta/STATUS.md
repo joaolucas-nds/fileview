@@ -23,33 +23,19 @@
 - **Drop global:** arrastar arquivo em qualquer parte da tela
 - **Outros formatos:** .yaml, .yml, .xml, .svg, .txt, .env, .toml, .log abrem em SourceEditor (textarea dark editável)
 - **Salvar:** botão "Salvar ↓" aparece quando `isDirty`; dispara download do arquivo
-- **Sistema de documentação (meta/):** CEREBRO.md + 9 docs + logs, na versão do Kit de Contexto Universal adotada em 2026-07-03 (DEC-009), agora com a pendência de nomenclatura ASU também resolvida (ver DECISIONS.md).
+- **Sistema de documentação (meta/) — modo Code desde 2026-11-10 (DEC-011):** CEREBRO.md (base KCM v1.135.0) + 10 docs + `SPEC.md` + `workorders/` + logs; `CLAUDE.md`, `.claude/` (skills `/apply-wo`, `/wrap`, `/sondar`) e `INSTRUCOES-DO-PROJETO.md` na raiz. ASU desligado.
 
 ## 🔧 Em Progresso
-- Nada em andamento no produto. A sessão de 2026-11-07 foi de transferência de contexto (handoff) — ver `261107-HANDOFF-BRIEF.md`.
+- Nada em andamento no produto. A conversa de 2026-11-10 foi de processo: merge do KCM v1.135.0 e migração ASU → Code (esta wo0001 é o registro).
 
 ## ❌ Quebrado / Com Problema
-- Nenhum bug conhecido no produto.
+- **Abas compartilham a posição de rolagem** `[relatado pelo dono, 2026-11-10]` — com 2 arquivos abertos, rolar um deles faz o outro abrir já rolado (no fim). Causa não investigada; suspeita a confirmar lendo o código: o container de rolagem do viewer é o mesmo elemento para todas as abas e não guarda posição por arquivo.
 
 ## 📋 Backlog (curto prazo — itens acionáveis)
 - [ ] **Busca Ctrl+F no SourceEditor** — highlight de ocorrências no textarea.
 - [ ] **Tooltips customizados** na toolbar do editor MD.
-- [ ] **Verificar o commit `f626337` ("correcao asu0003", 2026-07-24)** — não há log nem entrada no CHANGELOG sobre o que ele mudou. O `CsvViewer.jsx` do snapshot de 2026-11-06 contém a navegação Tab completa (+ uma linha em branco residual dentro do `onKeyDown`, entre os handlers de Tab e Escape — cosmético). Rodar `git show f626337 --stat` e registrar o que foi.
 - [ ] **Testar no navegador (nunca confirmado):** CSV — Tab/Shift+Tab (bordas, com filtro e ordenação ativos); JSON Formulário — edição inline em `Field`, células do `ArrayTable` e `RowDetailModal` (string, number, boolean, null, texto longo; sensação dos 220 ms do DEC-010). **Suspeita a confirmar:** número digitado inválido vira `NaN` em `parseEditedValue` e `JSON.stringify` grava `null`; `null` editado volta sempre `null`; boolean ≠ `"true"` vira `false` (ver IDEAS).
 - [ ] **Atualizar o `README.md` e decidir a versão do `package.json`** — README sem o modo Formulário, edição inline e Tab do CSV; `package.json` ainda em `0.1.0` (CHANGELOG está em 0.1.6). Decidir se a versão do package acompanha o CHANGELOG.
-- [ ] **Apagar `meta/HISTORICO.md`** — o `_TREE` de 2026-11-06 mostra o arquivo ainda no repo (e o Projeto também o lista), duplicata antiga do `HISTORY.md`. `git rm meta\HISTORICO.md` + remover do Projeto Claude.
-- [ ] **`PROJECT_INSTRUCTIONS.md` não está no repo nem no Projeto** (ausente do `_TREE`). A caixa "Instruções do Projeto" do Claude.ai já mostra `AAMMDD-asuNNNN.yaml` (parece sincronizada). Decidir se o arquivo versionado volta para `meta/` — se voltar, lembrar da armadilha dos dois arquivos de instrução em sincronia (CEREBRO × PROJECT_INSTRUCTIONS).
 
-
-## 📁 Arquivos Críticos (não mexer sem contexto)
-- `src/context/AppContext.jsx` — estado global; PDFs devem ser Blob URL, nunca ArrayBuffer.
-- `src/editors/MarkdownEditor.jsx` — configuração Tiptap; `StarterKit.configure({ codeBlock: false })` obrigatório.
-- `src/App.css` — todas as CSS vars e classes `.md-output`/`.tiptap-editor`; mudança reflete em tudo.
-- `src/viewers/JsonViewer.jsx` — Árvore + FormView (Cards/Tabs/Painel) + ArrayTable (paginação+modal, ambos editáveis desde 2026-07-07 sessão 2) + edição inline do Field. `parseSections`/`SectionContent` compartilhados pelos 3 layouts; `handleUpdate` (no componente principal) é a mesma função usada por TODOS os pontos de edição (Árvore, Field, células do ArrayTable, RowDetailModal) — path dotted, incluindo índice de array quando aplicável. `ROWS_PER_PAGE = 20` controla a paginação; `ROW_CLICK_DELAY = 220` (ms) resolve o conflito clique-abre-modal vs duplo-clique-edita-célula (ver DEC-010).
-- `src/viewers/CsvViewer.jsx` — `commitValue` extraída de `commitEdit` (2026-07-07) para ser reaproveitada por `commitAndMove`, que resolve a navegação por Tab; navega sobre `filtered` (ordem visível), não sobre `data` cru — mesmo cuidado do FIX-002 aplicado à navegação, não só à gravação.
-- `vite.config.js` — `base: './'` obrigatório para GitHub Pages; não remover.
-- `.github/workflows/deploy.yml` — pipeline de deploy automático; node-version 24; não remover.
-- `meta/CEREBRO.md` — regras de comportamento; qualquer atualização do kit deve ser mesclada aqui, não sobrescrita.
-
-## 💬 Última Sessão
-**2026-11-07 (sessão 4 — handoff)** — Sessão só de preparação para trocar de conversa; **nenhum código do produto foi alterado**. Entregues o `261107-HANDOFF-BRIEF.md` (arquivo novo; atalho de arranque — a memória continua nestes docs de `meta/`), este patch `261107-asu0004.yaml` e o log `logs/2026-11-07.md`. Por pedido explícito do usuário, STATUS/IDEAS foram atualizados por ASU em vez de arquivo inteiro (exceção à regra dos docs rolantes). Limitação: a sandbox não tinha o mount do Projeto — o estado foi lido via `project_read`; as âncoras do ASU foram simuladas só contra STATUS/IDEAS/DECISIONS (cópias em disco) e CONTEXT/GLOSSARY só tiveram as linhas-alvo conferidas, então **o dry-run do ASU é obrigatório**. Achados: `CsvViewer.jsx` já contém a navegação Tab (0.1.6 aplicada; o commit `f626337` "correcao asu0003" de 2026-07-24 não foi inspecionado); `DECISIONS.md` tinha perdido o cabeçalho `## FIX-001` (restaurado, título reconstruído do corpo); `meta/HISTORICO.md` segue no repo; `PROJECT_INSTRUCTIONS.md` não está no repo; CONTEXT/GLOSSARY estavam velhos (nomenclatura ASU, edição inline, Tab, layout de `meta/ASU/`) — atualizados. Último trabalho de produto: 2026-07-07 (sessão 3, CSV Tab, 0.1.6). Próximo passo: ver `261107-HANDOFF-BRIEF.md`.
+## 💬 Última conversa
+**2026-11-10 (chat, com a pasta vinculada)** — Só processo, **nenhum código do produto alterado**. Merge do KCM v1.135.0 + migração ASU → modo Code (DEC-011): `CLAUDE.md`, `.claude/`, `INSTRUCOES-DO-PROJETO.md` (commit `6925a88`); CEREBRO/CONTEXT/GLOSSARY/LOG-TEMPLATE/.gitignore/.flatdropignore reescritos pelo chat e versionados por esta wo0001; `meta/ASU/` fora do repo. Resolvidos de passagem: `f626337` era só docs (`git show --stat`), `HISTORICO.md` já tinha saído, `PROJECT_INSTRUCTIONS.md` virou `INSTRUCOES-DO-PROJETO.md`. Próximo passo: escolher a frente de produto — o bug do scroll por aba (Quebrado) é candidato. Detalhe em `logs/2026-11-10.md`.

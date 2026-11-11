@@ -1,14 +1,14 @@
-# LOG-TEMPLATE.md — Formato do Log de Sessão
+# LOG-TEMPLATE.md — Formato do Log do Dia
 
-> **Referência fixa.** Este arquivo é o MOLDE — nunca é substituído pelo conteúdo preenchido.
-> Ao final de cada sessão, o assistente entrega um arquivo novo `logs/AAAA-MM-DD.md` neste formato.
-> Os logs vivem em `logs/` no Git (NÃO no Projeto do Claude) e são lidos só sob demanda — quando você precisar recuperar o detalhe de uma sessão antiga.
+> **Referência fixa.** Este arquivo é o MOLDE — não é substituído.
+> O log entra ao bater um gatilho de evento — cortar versão, registrar decisão ou erro grave, virar o dia —, e não «no fim», que numa conversa longa nunca chega. O assistente entrega um arquivo novo `logs/AAAA-MM-DD.md` preenchido neste formato.
+> Os logs vivem em `logs/` no Git (NÃO no Projeto) e são lidos só sob demanda — quando você precisar recuperar o detalhe de um dia antigo.
 
 ---
 
 # Log — AAAA-MM-DD
 
-## Objetivo da sessão
+## Objetivo do dia
 [O que se pretendia fazer ao começar.]
 
 ## Feito
@@ -18,13 +18,13 @@
 - [Decisões tomadas → quais viraram DEC-N em DECISIONS.md.]
 
 ## Bugs
-- [Bugs encontrados/resolvidos → quais viraram FIX-N em DECISIONS.md.]
+- [Bugs encontrados/resolvidos → quais viraram FIX-N.]
 
 ## Aprendizados / armadilhas
-- [O que descobrimos que vale virar armadilha #N em CONTEXT.md.]
+- [O que descobrimos que vale virar armadilha em CONTEXT.md.]
 
 ## Onde parei
-[Estado exato ao encerrar + próximo passo óbvio. Alimenta o «Última Sessão» do STATUS.md.]
+[Estado exato ao encerrar + próximo passo óbvio. Isto alimenta o «Última conversa» do STATUS.]
 
 ## Próximos passos
-- [ ] [Ações para a próxima sessão.]
+- [Ações para o próximo turno.]

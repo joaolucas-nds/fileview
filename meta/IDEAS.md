@@ -10,6 +10,12 @@
 ### 2026-06 — CSV: mais prático, eficiente e intuitivo
 A tabela atual funciona mas não é fluida como planilha real. Melhorias desejadas: ~~Tab para mover entre células~~ (implementado em 2026-07-07, ver Concluídas), seleção de múltiplas células, copiar/colar bloco de células, resize de colunas arrastando o header, freeze de linha de cabeçalho (já tem) e possível freeze da primeira coluna. Itens ainda em aberto: seleção múltipla, copiar/colar bloco, resize de coluna, freeze da primeira coluna.
 
+### 2026-11-10 — Abas: fechar com o botão do meio do mouse
+`[relatado pelo dono]` Como nas abas do navegador: clique do meio numa aba (e no item da Sidebar) fecha o arquivo. Mesma regra do ✕ atual — arquivo com alteração não salva precisa de confirmação ou do mesmo comportamento que o ✕ já tem.
+
+### 2026-11-10 — Abas: atalhos de teclado para fechar e alternar
+`[relatado pelo dono]` Fechar a aba ativa e alternar entre abas pelo teclado, no espírito de Ctrl+W e Ctrl+PgDn/PgUp. **O próprio dono apontou o problema:** esses atalhos são do navegador. `[a confirmar]` O Chrome não deixa uma página web cancelar Ctrl+W nem a troca de aba por Ctrl+PgUp/PgDn; as saídas prováveis são atalhos próprios (ex.: Alt+W, Alt+←/→) ou o FileView instalado como app (PWA/F4), onde o navegador libera mais atalhos. Medir antes de prometer.
+
 ---
 
 ## 🤖 Ideias Ativas — Assistente
@@ -52,6 +58,12 @@ O `title` HTML já existe em todos os botões. Tooltips visuais com delay melhor
 
 ---
 
+## 🛌 Adiadas
+> Decisão consciente de não fazer agora. Cada item com **o gatilho que a traz de volta**: ideia adiada sem gatilho é ideia perdida.
+- _(nenhuma ainda)_
+
+---
+
 ## ✅ Concluídas
 
 - **Análise de viabilidade técnica e de mercado** — pesquisada em 2026-05. Ver HISTORY.md.
@@ -68,6 +80,7 @@ O `title` HTML já existe em todos os botões. Tooltips visuais com delay melhor
 - **Nomenclatura de ASU migrada para o padrão do kit** (`AAMMDD-asuNNNN.yaml`) — pendência do DEC-009 resolvida em 2026-07-07.
 - **JSON formulário: edição inline no RowDetailModal e nas células do ArrayTable** — 2026-07-07 (sessão 2). Ver DEC-010, STATUS/CHANGELOG 0.1.5.
 - **CSV: navegação por Tab entre células** — Tab confirma e move para a próxima coluna/linha (Shift+Tab volta), seguindo a ordem visível (`filtered`). 2026-07-07 (sessão 3). Ver STATUS/CHANGELOG 0.1.6.
+- **Migração ASU → modo Code** — 2026-11-10, junto do merge do KCM v1.135.0. Ver DEC-011.
 
 ---
 
@@ -89,10 +102,15 @@ O `title` HTML já existe em todos os botões. Tooltips visuais com delay melhor
 - **2026-07-03 — Nomenclatura ASU sugerida pelo kit (`AAMMDD-asuNNNN.yaml`) é mais compacta, mas perde a descrição no nome do arquivo** — para um projeto com múltiplos ASUs ao longo de semanas, ter a descrição no nome (`..._json-table-ux.yaml`) é bem mais útil para auditar de relance do que abrir cada arquivo ou manter um índice à parte. Sugestão para o kit: considerar o formato com descrição como alternativa válida, não só o compacto — ou ao menos mencionar explicitamente que é customizável por projeto (o texto atual soa como um padrão fixo).
 - **2026-07-07 — Migração efetiva para o padrão do kit, com o trade-off aceito conscientemente** — depois de usar a convenção própria em 3 ASUs, o usuário decidiu migrar para `AAMMDD-asuNNNN.yaml` mesmo assim. O ponto acima (perda de auditabilidade por nome) segue válido como observação para o kit, mas na prática deste projeto o usuário priorizou aderência ao padrão do kit sobre a vantagem de auditoria — registrado para reforçar que a crítica de 2026-07-03 é uma preferência, não um bloqueio real à adoção do padrão compacto.
 - **2026-11-07 — Transferência de conversa (HANDOFF-BRIEF) chegou como pedido ad hoc.** Não confirmei se o `CEREBRO.md` tem gatilho/formato para isso (a busca no Projeto veio sem trechos). Se não tiver, vale propor ao kit: gatilho "conversa pesada → HANDOFF-BRIEF" + template de seções (onde estamos · feito e por quê · pendências com 1º passo · próxima frente e indecisões · armadilhas · ritual + config). Também registrar o modo "handoff incremental": o usuário pediu patches ASU até para docs rolantes (STATUS/IDEAS), contrariando o padrão "rolante = arquivo inteiro" — a regra atual não prevê essa exceção.
+- **2026-11-10 — O carimbo de modos decide «sobra» só pelo arquivo, e aqui teria apagado o fluxo vivo.** O pacote v1.135.0 veio com `ASU nao`; a regra do manifesto («marcador presente + modo `nao` = sobra, remova») mandava apagar a seção ASU do CEREBRO de um projeto que ainda vivia de ASU (`meta/ASU/`, DEC-009, quatro `asuNNNN.yaml`). O dono estava migrando de propósito, mas não tinha avisado. Sugestão: antes de declarar sobra, conferir se o projeto USA o modo (artefatos dele no repo); se usa, é pergunta para o dono, não remoção.
+- **2026-11-10 — A pergunta de 2026-11-07 sobre o HANDOFF-BRIEF está respondida pelo kit:** o v1.135.0 já nomeia `AAMMDD-HANDOFF-BRIEF.md` no bloco de fecho e diz que ele nunca é versionado.
+- **2026-11-10 — Desvio registrado: pasta de arquivo `zz_notas-arquivadas/`** (o kit diz `notas-arquivadas/`). Nome do dono, mantido; está em «Técnicas específicas» do CEREBRO e nas Instruções.
+- **2026-11-10 — Custo do CEREBRO v1.135.0:** ~106 KB contra ~36 KB do anterior. É lido sob demanda (as Instruções são o que roda todo turno), mas o tamanho torna a comparação bloco a bloco cara; um índice de seções no topo ajudaria.
 
 ## 🔧 Feedback para o ASU
 
 > Observações sobre a ferramenta ASU em si (o Atualizador Automático de Scripts) — separado do Kit de Contexto, é outra ferramenta.
+> **Encerrada em 2026-11-10:** o ASU foi desligado (DEC-011). As entradas abaixo ficam como histórico; os três pontos «não verificado» do asu0004 não serão mais conferidos.
 
 - Nenhum problema ou limitação da ferramenta ASU em si foi encontrado até agora nas 5 instruções geradas (`2026-06-28_001_json-form-view.yaml`, `2026-07-01_001_json-table-ux.yaml`, uma anterior de atualização do Node, `260707-asu0001.yaml`, `260707-asu0002.yaml`). Todas usaram `replace_file` (reescrita completa do arquivo-alvo) em vez de patches cirúrgicos menores — isso funcionou bem porque o `JsonViewer.jsx` mudou estruturalmente demais para valer a pena um patch localizado a cada vez, mas é um padrão de uso a observar: se o arquivo continuar crescendo, `replace_file` vai ficar cada vez mais caro (todo o arquivo precisa ser reescrito por completo a cada ajuste pequeno). Considerar migrar para patches `replace_context_block` mais cirúrgicos assim que o `JsonViewer.jsx` estabilizar.
 - **2026-07-07 — Validação de sintaxe antes de entregar `replace_file`:** a partir do `260707-asu0002.yaml`, passou a fazer parte do processo rodar o conteúdo do `new_content` pelo Babel (`transformSync` com `@babel/preset-react`) antes de gerar o YAML, além da checagem byte a byte já praticada desde a sessão anterior. Pega erros de sintaxe JSX/JS que a checagem byte a byte sozinha não pega (ela só garante que o texto extraído do YAML bate com o arquivo fonte, não que o arquivo fonte em si é válido). Vale manter como prática padrão para qualquer `replace_file`/`create_file` em `.jsx`/`.js` deste projeto.
