@@ -18,10 +18,10 @@ export function AppProvider({ children }) {
 
     let content
     if (ext === 'pdf') {
-      // ARMADILHA (FIX-001): PDF.js v4 faz postMessage com transfer do ArrayBuffer
-      // para o worker, o que o DETACHA do main thread permanentemente.
-      // Na remontagem do componente, o buffer estaria morto → erro "already detached".
-      // Solução: converter para Blob URL (string) — imune a transfer/detachment.
+      // PDF vira Blob URL (string): é o que o <iframe> do PdfViewer abre (DEC-012).
+      // Origem da regra (FIX-001): quando o PDF.js desenhava o PDF, o transfer do
+      // ArrayBuffer para o worker o DETACHAVA; guardar a URL, nunca o buffer, evita isso.
+      // closeFile revoga a URL — revogar antes de fechar deixa o iframe em branco.
       const buf = await file.arrayBuffer()
       const blob = new Blob([buf], { type: 'application/pdf' })
       content = URL.createObjectURL(blob)

@@ -13,7 +13,7 @@
 - **Mode** — modo de exibição atual de um arquivo. Valores: `preview` (MD renderizado, read-only), `edit` (WYSIWYG Tiptap), `source` (textarea raw dark), `view` (padrão para JSON/CSV — árvore ou tabela), `form` (JSON — modo Formulário).
 - **ActiveFile** — objeto derivado em AppContext: `files.find(f => f.id === activeId)`. É o arquivo atualmente em foco.
 - **isDirty** — `true` quando `content !== originalContent`. Exibe o dot laranja na tab e na sidebar; habilita o botão "Salvar ↓".
-- **Blob URL** — URL do tipo `blob:http://localhost:5173/...` criada com `URL.createObjectURL(blob)`. Armazena PDFs no estado React sem risco de ArrayBuffer detachment pelo worker do PDF.js. Deve ser revogada com `URL.revokeObjectURL` ao fechar o arquivo.
+- **Blob URL** — URL do tipo `blob:http://localhost:5173/...` criada com `URL.createObjectURL(blob)`. É como o PDF fica no estado React (`content`) e o que o `<iframe>` do `PdfViewer` abre (DEC-012); nasceu para evitar o ArrayBuffer detachado pelo worker do PDF.js (FIX-001). Deve ser revogada com `URL.revokeObjectURL` ao fechar o arquivo.
 - **`__dataIdx`** — campo interno injetado em cada linha do array `filtered` no CsvViewer, que guarda o índice da linha no array `data` original. Garante que `commitEdit` opere sobre a linha correta mesmo com filtros/sort ativos.
 - **FormView** — o modo Formulário do JsonViewer; converte o JSON num layout visual (Cards/Tabs/Painel) em vez de árvore de nós.
 - **ArrayTable** — componente dentro do JsonViewer que renderiza um array de objetos como tabela HTML paginada, com truncamento e modal de detalhe (ver DEC-008).

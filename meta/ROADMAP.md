@@ -38,7 +38,7 @@
 **Objetivo:** Expandir cobertura de formatos além dos originais.
 - [ ] `.xlsx` via SheetJS (múltiplas sheets, leitura + escrita)
 - [ ] `.docx` visualização via mammoth.js (read-only com boa fidelidade HTML)
-- [ ] PDF: anotações overlay (highlight, notas) via pdf-lib, sem tocar no conteúdo original
+- [ ] ~~PDF: anotações overlay (highlight, notas) via pdf-lib~~ — descartado em 2026-11-11 (DEC-012: PDF no visualizador nativo).
 - [ ] Tema dark/light alternável (CSS vars já prontas; é só toggle de classe + localStorage)
 
 ---

@@ -14,11 +14,14 @@ A tabela atual funciona mas não é fluida como planilha real. Melhorias desejad
 `[relatado pelo dono]` Como nas abas do navegador: clique do meio numa aba (e no item da Sidebar) fecha o arquivo. Mesma regra do ✕ atual — arquivo com alteração não salva precisa de confirmação ou do mesmo comportamento que o ✕ já tem.
 
 ### 2026-11-10 — Abas: atalhos de teclado para fechar e alternar
-`[relatado pelo dono]` Fechar a aba ativa e alternar entre abas pelo teclado, no espírito de Ctrl+W e Ctrl+PgDn/PgUp. **O próprio dono apontou o problema:** esses atalhos são do navegador. `[a confirmar]` O Chrome não deixa uma página web cancelar Ctrl+W nem a troca de aba por Ctrl+PgUp/PgDn; as saídas prováveis são atalhos próprios (ex.: Alt+W, Alt+←/→) ou o FileView instalado como app (PWA/F4), onde o navegador libera mais atalhos. Medir antes de prometer.
+`[relatado pelo dono]` Fechar a aba ativa e alternar entre abas pelo teclado, no espírito de Ctrl+W e Ctrl+PgDn/PgUp. **Confirmado em 2026-11-11 (pesquisa do chat):** no Windows o Chrome reserva Ctrl+N, Ctrl+W, Ctrl+T, Ctrl+Tab, Ctrl+Shift+Tab e Ctrl+PgUp/PgDn — a página nem recebe esses atalhos (proposital: impede um site de prender o usuário numa aba). Saídas: atalhos próprios (ex.: Alt+W, Alt+←/→) e o clique do meio (ideia acima). Atalhos como Ctrl+P e Ctrl+S chegam à página primeiro e podem ser usados.
 
 ---
 
 ## 🤖 Ideias Ativas — Assistente
+
+### 2026-11-11 — Ctrl+roda como zoom do conteúdo (MD, JSON, CSV, texto)
+O Chrome entrega Ctrl+roda à página primeiro: um listener de `wheel` com `{passive: false}` que chama `preventDefault()` quando `ctrlKey` é verdadeiro troca o zoom da página pelo zoom do FileView (é o que Google Maps e Canva fazem; a pinça do touchpad chega como o mesmo evento). Aplicaria um tamanho de fonte por aba nos viewers de texto. O PDF já tem isso de graça desde a 0.1.8 (DEC-012).
 
 ### 2026-11-11 — Abas: lembrar a posição de rolagem de cada aba
 Depois do FIX-003 cada aba volta ao topo ao ser reaberta. O comportamento de navegador é lembrar onde se estava. Caminho provável: um `Map` por `id:modo` com o `scrollTop`, gravado por `onScrollCapture` num contêiner em volta do viewer e restaurado depois de montar — o elemento que rola muda de viewer para viewer e o conteúdo do PDF/Markdown chega depois da montagem, então precisa de um pequeno «esperar o conteúdo». Avaliar junto: preservar também filtro/ordenação do CSV e zoom do PDF.
@@ -47,9 +50,6 @@ Para SourceEditor e MarkdownViewer: campo de busca flutuante que destaca ocorrê
 ### 2026-06-05 — Suporte a .xlsx via SheetJS
 SheetJS é a biblioteca padrão para Excel no browser. XlsxViewer similar ao CsvViewer com suporte a múltiplas abas.
 
-### 2026-06-05 — PDF: anotações overlay
-`pdf-lib` permite adicionar texto e formas sobre um PDF sem alterar o conteúdo original. Não quebra DEC-004.
-
 ### 2026-06-05 — Tema escuro/claro alternável
 Sidebar já é dark; conteúdo é light. Toggle para tema completamente dark persistindo em localStorage. CSS vars já centralizadas — é só toggle de classe no `<html>`.
 
@@ -63,7 +63,7 @@ O `title` HTML já existe em todos os botões. Tooltips visuais com delay melhor
 
 ## 🛌 Adiadas
 > Decisão consciente de não fazer agora. Cada item com **o gatilho que a traz de volta**: ideia adiada sem gatilho é ideia perdida.
-- _(nenhuma ainda)_
+- **PDF: abrir numa aba nova do navegador em vez de embutido** (opção C da conversa de 2026-11-11) — adiada porque o dono escolheu a B (iframe, DEC-012) — **volta quando** o dono disser que não gostou do visual nativo dentro do FileView.
 
 ---
 
@@ -93,6 +93,7 @@ O `title` HTML já existe em todos os botões. Tooltips visuais com delay melhor
 - **react-json-view** — sem manutenção desde 2021, incompatível com React 18. Ver DEC-003.
 - **TypeScript imediato** — aumentaria fricção no estágio atual; revisitar na F3.
 - **Virtualização de linhas (react-window) no ArrayTable** — complexidade desnecessária para o volume atual de dados (centenas de linhas); paginação simples resolve. Ver DEC-008. Revisitar se algum JSON real chegar a dezenas de milhares de itens.
+- **PDF: anotações overlay via `pdf-lib`** (ideia de 2026-06-05) — descartada em 2026-11-11: com o PDF no visualizador nativo (DEC-012) não há canvas próprio onde desenhar. Volta só se o PDF voltar a ser desenhado pelo FileView.
 
 ---
 

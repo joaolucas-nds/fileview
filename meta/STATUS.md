@@ -6,7 +6,8 @@
 ---
 
 ## Versão Atual
-**[0.1.7]** — 2026-11-11 — Abas: cada arquivo aberto tem rolagem e estado de UI próprios (FIX-003). Build verde; **conferência na tela pendente** (roteiro do dono, conversa de 2026-11-11).
+**[0.1.8]** — 2026-11-11 — PDF no visualizador nativo do navegador (`<iframe>`), sem `pdfjs-dist` (DEC-012). Build verde; **conferência na tela pendente** (roteiro do dono, conversa de 2026-11-11).
+**[0.1.7]** — 2026-11-11 — Abas: cada arquivo aberto tem rolagem e estado de UI próprios (FIX-003). **Conferido na tela pelo dono: 6/6 ok.**
 **[0.1.6]** — 2026-07-07 — CSV: navegação por Tab entre células durante a edição. **Confirmado aplicado** (o `CsvViewer.jsx` do snapshot do Projeto de 2026-11-06 contém `commitValue`/`commitAndMove`, o handler de Tab e o rodapé novo). O commit posterior `f626337` ("correcao asu0003", 2026-07-24) não foi inspecionado — ver Backlog.
 **[0.1.5]** — 2026-07-07 — JSON Formulário: edição inline no `RowDetailModal` e nas células do `ArrayTable`. **Confirmado aplicado** (conferido no disco: `JsonViewer.jsx` bate com o `260707-asu0002.yaml`).
 
@@ -15,7 +16,7 @@
 - **JSON — Árvore:** árvore recursiva colapsável, cores por tipo de dado, edição inline de valores folha (double-click + Enter/Esc), formatar/minificar
 - **JSON — Formulário:** chaves de 1º nível viram cards/tabs/painel; arrays de objetos viram tabela paginada (20 linhas/página) com colunas truncadas (ellipsis); campos primitivos (Cards/Tabs/Painel) editáveis com duplo clique (Enter confirma, Esc cancela); **células do ArrayTable editáveis com duplo clique direto na tabela**; **clique numa linha abre o `RowDetailModal` com o registro completo, também editável (duplo clique num valor → textarea para string, input para number/boolean/null)** — path resolvido via índice ORIGINAL da linha no array, não a posição pós-paginação; sub-switcher `Cards | Tabs | Painel` persistido em localStorage; cards de tabela ocupam a largura total da grade
 - **CSV:** tabela com cabeçalho fixo sticky, ordenação por coluna (asc/desc), filtro com botão "limpar", edição inline com botão ✕ cancelar (Enter confirma, Esc/✕ cancela), **Tab confirma e move para a próxima célula (Shift+Tab volta), seguindo a ordem visível — pula de coluna em coluna e, na borda, para a linha seguinte/anterior**, adicionar linha, deletar linha — edição opera sobre `data` original mesmo com filtro ativo
-- **PDF:** renderização por canvas via pdfjs-dist, navegação por páginas, zoom 50%–300% — Blob URL, sem erro de ArrayBuffer detachado
+- **PDF:** visualizador nativo do navegador dentro da aba do FileView (`<iframe>` com a Blob URL, DEC-012) — zoom, Ctrl+roda, busca, seleção de texto, impressão e miniaturas vêm do navegador. Só leitura (DEC-004).
 - **GitHub Pages:** deploy automático via GitHub Actions (`.github/workflows/deploy.yml`, Node 24) — build roda no servidor do GitHub, publica apenas o `dist/`. Confirmado funcionando em produção em `https://joaolucas-nds.github.io/fileview/`.
 - **Sidebar:** lista de arquivos abertos, indicador de modificado (dot laranja), fechar por arquivo, drag-and-drop lateral
 - **Tabs:** troca de arquivo ativo, fechar por tab, indicador de modificado (● laranja); cada aba com rolagem e estado de UI próprios desde 0.1.7 (voltar a uma aba reabre do topo — lembrar a posição está no IDEAS)
@@ -26,7 +27,7 @@
 - **Sistema de documentação (meta/) — modo Code desde 2026-11-10 (DEC-011):** CEREBRO.md (base KCM v1.135.0) + 10 docs + `SPEC.md` + `workorders/` + logs; `CLAUDE.md`, `.claude/` (skills `/apply-wo`, `/wrap`, `/sondar`) e `INSTRUCOES-DO-PROJETO.md` na raiz. ASU desligado.
 
 ## 🔧 Em Progresso
-- Nada em andamento no produto. A 0.1.7 (FIX-003, commit `3d108e5`) está no ar; falta só a conferência na tela pelo dono.
+- Nada em andamento no produto. A 0.1.8 (DEC-012) está no ar; falta a conferência na tela pelo dono. **Volta atrás combinada:** se o visual nativo não agradar, a opção C (abrir o PDF numa aba nova do navegador) está registrada em IDEAS → Adiadas.
 
 ## ❌ Quebrado / Com Problema
 - Nenhum bug conhecido no produto.
@@ -34,7 +35,7 @@
 ## 📋 Backlog (curto prazo — itens acionáveis)
 - [ ] **Busca Ctrl+F no SourceEditor** — highlight de ocorrências no textarea.
 - [ ] **Tooltips customizados** na toolbar do editor MD.
-- [ ] **Testar no navegador (nunca confirmado):** abas (FIX-003) — abrir 2 arquivos do mesmo tipo, rolar um e trocar: o outro abre no topo, sem filtro/zoom do primeiro; CSV — Tab/Shift+Tab (bordas, com filtro e ordenação ativos); JSON Formulário — edição inline em `Field`, células do `ArrayTable` e `RowDetailModal` (string, number, boolean, null, texto longo; sensação dos 220 ms do DEC-010). **Suspeita a confirmar:** número digitado inválido vira `NaN` em `parseEditedValue` e `JSON.stringify` grava `null`; `null` editado volta sempre `null`; boolean ≠ `"true"` vira `false` (ver IDEAS).
+- [ ] **Testar no navegador (nunca confirmado):** CSV — Tab/Shift+Tab (bordas, com filtro e ordenação ativos); JSON Formulário — edição inline em `Field`, células do `ArrayTable` e `RowDetailModal` (string, number, boolean, null, texto longo; sensação dos 220 ms do DEC-010). **Suspeita a confirmar:** número digitado inválido vira `NaN` em `parseEditedValue` e `JSON.stringify` grava `null`; `null` editado volta sempre `null`; boolean ≠ `"true"` vira `false` (ver IDEAS).
 - [ ] **Atualizar o `README.md` e decidir a versão do `package.json`** — README sem o modo Formulário, edição inline e Tab do CSV; `package.json` ainda em `0.1.0` (CHANGELOG está em 0.1.7). Decidir se a versão do package acompanha o CHANGELOG.
 
 ## 💬 Última conversa

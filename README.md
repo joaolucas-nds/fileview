@@ -161,7 +161,7 @@ fileview/
     │   ├── MarkdownViewer.jsx  # Renderização MD → HTML bonito
     │   ├── JsonViewer.jsx      # Árvore interativa para JSON
     │   ├── CsvViewer.jsx       # Tabela interativa para CSV
-    │   └── PdfViewer.jsx       # Leitor PDF com PDF.js
+    │   └── PdfViewer.jsx       # PDF no visualizador nativo do navegador (iframe)
     └── editors/
         ├── MarkdownEditor.jsx  # Editor WYSIWYG Tiptap completo
         └── SourceEditor.jsx    # Editor de texto raw
@@ -177,7 +177,6 @@ fileview/
 | `tiptap-markdown` | Serialização MD ↔ Tiptap |
 | `marked` | Renderização Markdown → HTML |
 | `papaparse` | Parser de CSV |
-| `pdfjs-dist` | Renderização de PDF no browser |
 | `lowlight` | Syntax highlighting nos blocos de código |
 | `lucide-react` | Ícones |
 

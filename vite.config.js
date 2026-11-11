@@ -9,7 +9,4 @@ export default defineConfig({
   //   base: '/fileview/'
   base: './',
   plugins: [react()],
-  optimizeDeps: {
-    include: ['pdfjs-dist']
-  }
 })

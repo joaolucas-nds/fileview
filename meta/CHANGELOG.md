@@ -10,6 +10,15 @@
 
 ---
 
+## [0.1.8] — 2026-11-11
+### Modificado
+- **PDF no visualizador nativo do navegador (DEC-012):** o PDF abre dentro da aba do FileView num `<iframe>`, com o visualizador do próprio navegador — zoom (inclusive Ctrl+roda), busca, seleção de texto, impressão e miniaturas.
+
+### Removido
+- **`pdfjs-dist`** e o visualizador próprio por canvas (navegação de página, zoom 50%–300%, «Reset»/«Ajustar»). O zoom dele não funcionava: o canvas era esticado à altura do contêiner, e o tamanho na tela não mudava.
+
+---
+
 ## [0.1.7] — 2026-11-11
 ### Corrigido
 - **Abas compartilhavam a posição de rolagem e o estado de UI (FIX-003):** com dois arquivos do mesmo tipo abertos, rolar um fazia o outro abrir já rolado; o filtro e a ordenação do CSV e o zoom do PDF também passavam de um arquivo para o outro. Agora cada aba remonta o seu viewer. Efeito colateral aceito: voltar a uma aba reabre do topo e com filtro/zoom zerados.

@@ -228,6 +228,24 @@ Commit `6925a88` instalou as superfícies do Code e tirou `meta/ASU/` do repo (o
 
 ---
 
+## DEC-012 — PDF no visualizador nativo do navegador (iframe), sem pdfjs-dist
+**Data:** 2026-11-11 · **Status:** aceita
+
+### Contexto
+O `PdfViewer` desenhava cada página em `<canvas>` com `pdfjs-dist`. O zoom estava quebrado (o canvas era item de flex com `align-items: stretch` e `maxWidth: 100%`: a altura seguia o contêiner, então 240% e 300% tinham o mesmo tamanho na tela — prints do dono, 2026-11-11), não havia busca nem seleção de texto (sem camada de texto), e Ctrl+roda ampliava a página do Chrome em vez do PDF. Com a edição de PDF fora de cogitação (DEC-004), o dono observou que o visualizador do navegador já faz melhor o que o nosso fazia.
+
+### Decisão
+O PDF abre dentro da aba do FileView num `<iframe>` apontando para a Blob URL do arquivo; o navegador renderiza. `pdfjs-dist` sai das dependências e o `optimizeDeps` dele sai do `vite.config.js`. **Volta atrás combinada com o dono:** se o visual nativo não agradar, passa-se à opção C (abrir em aba nova do navegador) — registrada em IDEAS → Adiadas.
+
+### Alternativas consideradas
+- **A. Consertar o canvas** (duas linhas de estilo + Ctrl+roda com listener `{passive: false}`) — continuaria sem busca, seleção de texto e impressão, e com uma dependência grande para manter.
+- **C. Abrir em aba nova do navegador** — o mais simples, mas o PDF sai das abas do FileView. Guardada como volta atrás.
+
+### Consequências
+Menos código (o `PdfViewer.jsx` cai de 152 para ~15 linhas) e menos uma dependência no bundle. A aparência passa a ser a do navegador, não a do FileView. Em navegador de celular o PDF pode não aparecer embutido (comportamento conhecido do Chrome Android — não testado aqui). A ideia de anotações sobre PDF (F3, `pdf-lib`) é descartada: sem canvas próprio não há onde desenhar. O DEC-004 (só leitura) continua valendo; a frase dele sobre «anotações overlay» como funcionalidade futura deixa de valer. A Blob URL do FIX-001 continua sendo a regra — agora porque o iframe precisa de uma URL.
+
+---
+
 ## FIX-001 — PDF: ArrayBuffer detachado ao remontar o viewer
 **Data:** 2026-06-05 · **Status:** resolvida
 

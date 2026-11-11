@@ -4,12 +4,12 @@
 > Muda só em alteração estrutural (stack, arquitetura, nova armadilha descoberta).
 > Revisão base de 2026-07-03, atualizada em 2026-11-07 (edição inline do JsonViewer, Tab do CsvViewer) e em 2026-11-10 (migração ASU → Code, DEC-011). Escrita com detalhe máximo propositalmente — é o handoff para uma conversa nova sem histórico.
 
-> **Mudanças nesta revisão (2026-11-10):** (1) árvore do projeto atualizada — entram `CLAUDE.md`, `INSTRUCOES-DO-PROJETO.md`, `.claude/`, `.flatdropignore`, `meta/SPEC.md`, `meta/workorders/`; saem `meta/ASU/` (movido para fora do repo) e `meta/HISTORICO.md` (já apagado); (2) a seção «Sobre o sistema de documentação» foi reescrita para o modo Code; (3) as sub-armadilhas do ASU saíram daqui para HISTORY.md §5 (o ASU foi desligado, o conhecimento fica como histórico); (4) **«📁 Arquivos Críticos» veio do STATUS para cá** — é conhecimento estável, e o template do kit o põe no CONTEXT; (5) «sessão» → «conversa/dia» onde a frase manda fazer algo.
+> **Mudanças nesta revisão (2026-11-10):** (1) árvore do projeto atualizada — entram `CLAUDE.md`, `INSTRUCOES-DO-PROJETO.md`, `.claude/`, `.flatdropignore`, `meta/SPEC.md`, `meta/workorders/`; saem `meta/ASU/` (movido para fora do repo) e `meta/HISTORICO.md` (já apagado); (2) a seção «Sobre o sistema de documentação» foi reescrita para o modo Code; (3) as sub-armadilhas do ASU saíram daqui para HISTORY.md §5 (o ASU foi desligado, o conhecimento fica como histórico); (4) **«📁 Arquivos Críticos» veio do STATUS para cá** — é conhecimento estável, e o template do kit o põe no CONTEXT; (5) «sessão» → «conversa/dia» onde a frase manda fazer algo. **2026-11-11 (DEC-012):** PDF passa a abrir no visualizador nativo do navegador, num `<iframe>`; `pdfjs-dist` sai da stack (linha da tabela, árvore e armadilha #1 ajustadas).
 
 ---
 
 ## Visão Geral
-FileView é um visualizador e editor de arquivos que roda **100% no browser, sem servidor** (SPA client-side puro). Resolve o problema de abrir arquivos de desenvolvimento (`.md`, `.json`, `.csv`, `.pdf`, configs) com uma experiência visual adequada — sem precisar do VS Code e sem ver sintaxe bruta. O Markdown renderiza como o Claude renderiza (bonito, com preview real); o JSON vira árvore interativa OU formulário visual (cards/tabs/painel); o CSV vira tabela editável tipo planilha; o PDF renderiza página a página com zoom e navegação.
+FileView é um visualizador e editor de arquivos que roda **100% no browser, sem servidor** (SPA client-side puro). Resolve o problema de abrir arquivos de desenvolvimento (`.md`, `.json`, `.csv`, `.pdf`, configs) com uma experiência visual adequada — sem precisar do VS Code e sem ver sintaxe bruta. O Markdown renderiza como o Claude renderiza (bonito, com preview real); o JSON vira árvore interativa OU formulário visual (cards/tabs/painel); o CSV vira tabela editável tipo planilha; o PDF abre no visualizador nativo do navegador, dentro da aba do FileView (DEC-012).
 
 O projeto nasceu de uma análise de viabilidade (2026-05, ver HISTORY.md seção 1) que constatou: não existe ferramenta gratuita e open-source que combine essas capacidades numa interface só com boa usabilidade. Cada peça (marked, Tiptap, pdfjs-dist, Papa Parse) já existe isoladamente e é madura; o valor do projeto é a integração + a UX.
 
@@ -23,7 +23,7 @@ O projeto nasceu de uma análise de viabilidade (2026-05, ver HISTORY.md seção
 | Editor WYSIWYG | Tiptap v2 + extensões | ^2.10.3 | Engine ProseMirror, mesmo stack do Notion/Linear — DEC-002 |
 | Serialização MD↔Tiptap | `tiptap-markdown` | ^0.8.10 | Extensão community, cobre o caso sem custo — DEC-002 |
 | Renderização MD (view-only) | `marked` | ^13.0.3 | GFM ativado |
-| PDF | `pdfjs-dist` | ^4.7.76 | Mozilla, usado no Firefox, 4M downloads/semana — só leitura, DEC-004 |
+| PDF | visualizador nativo do navegador (`<iframe>` com a Blob URL) | — | Desde 0.1.8 (DEC-012): zoom, busca, seleção de texto e impressão vêm do navegador. Até 0.1.7 era `pdfjs-dist` desenhando em canvas. Só leitura, DEC-004 |
 | CSV | `papaparse` | ^5.4.1 | Parser mais robusto do JS, zero dependências |
 | Syntax highlight | `lowlight` | (via Tiptap) | Dentro dos code blocks do editor MD |
 | Ícones | `lucide-react` | ^0.462.0 **fixado** | Versões novas renomeiam ícones — armadilha #4 |
@@ -88,7 +88,7 @@ fileview/
     │   ├── MarkdownViewer.jsx              # marked → dangerouslySetInnerHTML numa div .md-output; read-only
     │   ├── JsonViewer.jsx                    # O ARQUIVO MAIS COMPLEXO do projeto — árvore + FormView completo (ver seção dedicada)
     │   ├── CsvViewer.jsx                       # tabela Papa Parse: sort, filter, edit inline (__dataIdx), add/delete row, botão cancelar
-    │   └── PdfViewer.jsx                         # canvas + pdfjs-dist; navegação, zoom; recebe Blob URL (nunca ArrayBuffer)
+    │   └── PdfViewer.jsx                         # <iframe> com a Blob URL — o navegador renderiza (DEC-012); sem biblioteca de PDF
     └── editors/
         ├── MarkdownEditor.jsx                    # Tiptap WYSIWYG completo: toolbar + BubbleMenu flutuante
         └── SourceEditor.jsx                        # textarea dark monospace; usado como "Fonte"/"Texto" para todo formato de texto
@@ -189,7 +189,7 @@ Transforma o JSON num formulário visual. Pipeline:
 
 ## Armadilhas Conhecidas (as 6 que já morderam)
 
-1. **PDF — ArrayBuffer detachado pelo worker.** PDF.js v4 faz `postMessage` com `transfer` do ArrayBuffer para o worker thread — isso **detacha permanentemente** o buffer do main thread. Se `content` fosse um ArrayBuffer guardado em estado React, reabrir o mesmo arquivo (ou remontar o componente) causaria `"ArrayBuffer at index 0 is already detached"`. **Solução:** `content` de PDF é sempre uma Blob URL (string), nunca ArrayBuffer. `PdfViewer` passa a string direto para `lib.getDocument(url)` — PDF.js faz o fetch internamente. `closeFile` revoga com `URL.revokeObjectURL`. Ver FIX-001.
+1. **PDF — guardar como Blob URL, nunca ArrayBuffer.** Origem (FIX-001, quando o PDF era desenhado por PDF.js v4): o `postMessage` com `transfer` para o worker **detachava** o ArrayBuffer do main thread, e reabrir o arquivo dava `"ArrayBuffer at index 0 is already detached"`. Desde 0.1.8 o PDF abre num `<iframe>` (DEC-012), que precisa de uma URL de qualquer jeito — a regra continua: `content` de PDF é sempre a Blob URL (string) criada em `openFile`, e `closeFile` a revoga com `URL.revokeObjectURL` (revogar antes de fechar deixa o iframe em branco). Se um dia o PDF voltar a ser desenhado por biblioteca, a armadilha do worker volta junto.
 
 2. **CSV — editar enquanto filtrado.** `filtered` é sempre um array DERIVADO de `data`. Reconstruir o CSV a partir do `filtered` descarta qualquer linha que não estivesse visível no filtro no momento do save. Solução: `__dataIdx` injetado em cada linha do `filtered`, e toda edição opera sobre `data` original indexado por esse número. Ver FIX-002.
 
