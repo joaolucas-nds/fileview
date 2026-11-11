@@ -10,6 +10,12 @@
 
 ---
 
+## [0.1.7] — 2026-11-11
+### Corrigido
+- **Abas compartilhavam a posição de rolagem e o estado de UI (FIX-003):** com dois arquivos do mesmo tipo abertos, rolar um fazia o outro abrir já rolado; o filtro e a ordenação do CSV e o zoom do PDF também passavam de um arquivo para o outro. Agora cada aba remonta o seu viewer. Efeito colateral aceito: voltar a uma aba reabre do topo e com filtro/zoom zerados.
+
+---
+
 ## [0.1.6] — 2026-07-07
 ### Adicionado
 - **CSV — navegação por Tab entre células:** durante a edição de uma célula, `Tab` confirma o valor e abre a célula seguinte para edição; `Shift+Tab` volta. Ao chegar na última/primeira coluna, pula para a primeira/última coluna da linha seguinte/anterior. A navegação segue a ordem **visível** da tabela (respeitando filtro e ordenação atuais), não a ordem crua do CSV — mesmo cuidado do FIX-002 aplicado agora também à navegação, não só à gravação.

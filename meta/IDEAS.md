@@ -20,6 +20,9 @@ A tabela atual funciona mas não é fluida como planilha real. Melhorias desejad
 
 ## 🤖 Ideias Ativas — Assistente
 
+### 2026-11-11 — Abas: lembrar a posição de rolagem de cada aba
+Depois do FIX-003 cada aba volta ao topo ao ser reaberta. O comportamento de navegador é lembrar onde se estava. Caminho provável: um `Map` por `id:modo` com o `scrollTop`, gravado por `onScrollCapture` num contêiner em volta do viewer e restaurado depois de montar — o elemento que rola muda de viewer para viewer e o conteúdo do PDF/Markdown chega depois da montagem, então precisa de um pequeno «esperar o conteúdo». Avaliar junto: preservar também filtro/ordenação do CSV e zoom do PDF.
+
 ### 2026-07-01 — ArrayTable: seletor de colunas visíveis
 Para tabelas com muitas colunas (10+), permitir esconder/mostrar colunas via um menu "Colunas" — padrão usado por Airtable e Notion database view. Reduz a necessidade de scroll horizontal quando nem todas as colunas importam para a inspeção atual. Ficou de fora do DEC-008 por ser escopo maior; registrar aqui para retomar se o caso de uso aparecer de novo.
 

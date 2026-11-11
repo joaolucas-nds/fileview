@@ -46,7 +46,10 @@ export default function ViewerRouter() {
 
   return (
     <Suspense fallback={<Loading />}>
-      <Component />
+      {/* key = id do arquivo: sem ela, dois arquivos do mesmo tipo reaproveitam a MESMA
+          instancia do viewer — o mesmo no de rolagem e o mesmo estado local (filtro, zoom,
+          ordenacao). Trocar de aba precisa remontar. Ver FIX-003. */}
+      <Component key={activeFile.id} />
     </Suspense>
   )
 }

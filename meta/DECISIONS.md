@@ -247,3 +247,15 @@ Commit `6925a88` instalou as superfícies do Code e tirou `meta/ASU/` do repo (o
 - **Solução:** Injetar `__dataIdx` em cada linha do `filtered`. `editCell` guarda `{ dataIdx, col }`. `commitEdit` opera sobre `data.map((r, i) => i === dataIdx ? ... : r)`.
 - **Bônus:** botão ✕ cancelar edição com `onMouseDown + preventDefault` (dispara antes do `onBlur`). → Armadilha #5 CONTEXT.md.
 - **Arquivo:** `src/viewers/CsvViewer.jsx`
+
+---
+
+## FIX-003 — Abas: arquivos do mesmo tipo dividiam a rolagem e o estado de UI
+**Data:** 2026-11-11 · **Status:** resolvida
+
+- **Sintoma:** `[relatado pelo dono, 2026-11-10]` com dois arquivos abertos, rolar um deles fazia o outro abrir já rolado (no fim). Pela leitura do código, o mesmo vale para todo estado local do viewer: filtro/ordenação do CSV, zoom do PDF, nós colapsados do JSON.
+- **Causa raiz:** `ViewerRouter` renderiza `<Component />` sem `key`. Para dois arquivos do mesmo tipo e modo, `Component` é o mesmo, na mesma posição da árvore — o React reaproveita a instância e o nó DOM. O `div` com `overflow: auto` é o mesmo elemento, então o `scrollTop` fica; os `useState` também. Arquivos de tipos diferentes não sofriam (componente diferente = remonta).
+- **Solução:** `<Component key={activeFile.id} />` — trocar de aba remonta o viewer.
+- **Alternativas consideradas:** manter todos os viewers montados e esconder os inativos (preserva tudo, mas multiplica instâncias de Tiptap/PDF.js em memória); guardar e restaurar a rolagem por aba (melhor UX, mas o elemento que rola é diferente em cada viewer e o conteúdo chega assíncrono — fica como ideia no IDEAS).
+- **Lição:** componente que é TROCADO conforme o item ativo (aba, linha, arquivo) precisa de `key` com a identidade do item; sem ela, estado e DOM vazam entre itens em silêncio.
+- **Arquivo:** `src/components/ViewerRouter.jsx`

@@ -6,8 +6,8 @@
 ---
 
 ## Versão Atual
+**[0.1.7]** — 2026-11-11 — Abas: cada arquivo aberto tem rolagem e estado de UI próprios (FIX-003). Build verde; **conferência na tela pendente** (roteiro do dono, conversa de 2026-11-11).
 **[0.1.6]** — 2026-07-07 — CSV: navegação por Tab entre células durante a edição. **Confirmado aplicado** (o `CsvViewer.jsx` do snapshot do Projeto de 2026-11-06 contém `commitValue`/`commitAndMove`, o handler de Tab e o rodapé novo). O commit posterior `f626337` ("correcao asu0003", 2026-07-24) não foi inspecionado — ver Backlog.
-*Nenhuma versão nova do produto desde a 0.1.6: a sessão de 2026-11-07 foi só de handoff (documentação), sem mudança de código.*
 **[0.1.5]** — 2026-07-07 — JSON Formulário: edição inline no `RowDetailModal` e nas células do `ArrayTable`. **Confirmado aplicado** (conferido no disco: `JsonViewer.jsx` bate com o `260707-asu0002.yaml`).
 
 ## ✅ Funcionando
@@ -18,7 +18,7 @@
 - **PDF:** renderização por canvas via pdfjs-dist, navegação por páginas, zoom 50%–300% — Blob URL, sem erro de ArrayBuffer detachado
 - **GitHub Pages:** deploy automático via GitHub Actions (`.github/workflows/deploy.yml`, Node 24) — build roda no servidor do GitHub, publica apenas o `dist/`. Confirmado funcionando em produção em `https://joaolucas-nds.github.io/fileview/`.
 - **Sidebar:** lista de arquivos abertos, indicador de modificado (dot laranja), fechar por arquivo, drag-and-drop lateral
-- **Tabs:** troca de arquivo ativo, fechar por tab, indicador de modificado (● laranja)
+- **Tabs:** troca de arquivo ativo, fechar por tab, indicador de modificado (● laranja); cada aba com rolagem e estado de UI próprios desde 0.1.7 (voltar a uma aba reabre do topo — lembrar a posição está no IDEAS)
 - **Multi-arquivo:** múltiplos arquivos abertos simultaneamente, modos independentes por arquivo
 - **Drop global:** arrastar arquivo em qualquer parte da tela
 - **Outros formatos:** .yaml, .yml, .xml, .svg, .txt, .env, .toml, .log abrem em SourceEditor (textarea dark editável)
@@ -29,7 +29,7 @@
 - Nada em andamento no produto. A conversa de 2026-11-10 foi de processo: merge do KCM v1.135.0 e migração ASU → Code (esta wo0001 é o registro).
 
 ## ❌ Quebrado / Com Problema
-- **Abas compartilham a posição de rolagem** `[relatado pelo dono, 2026-11-10]` — com 2 arquivos abertos, rolar um deles faz o outro abrir já rolado (no fim). Causa não investigada; suspeita a confirmar lendo o código: o container de rolagem do viewer é o mesmo elemento para todas as abas e não guarda posição por arquivo.
+- Nenhum bug conhecido no produto.
 
 ## 📋 Backlog (curto prazo — itens acionáveis)
 - [ ] **Busca Ctrl+F no SourceEditor** — highlight de ocorrências no textarea.
