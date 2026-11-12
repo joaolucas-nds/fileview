@@ -6,7 +6,7 @@
 ---
 
 ## Versão Atual
-**[0.1.8]** — 2026-11-11 — PDF no visualizador nativo do navegador (`<iframe>`), sem `pdfjs-dist` (DEC-012). Build verde; **conferência na tela pendente** (roteiro do dono, conversa de 2026-11-11).
+**[0.1.8]** — 2026-11-11 — PDF no visualizador nativo do navegador (`<iframe>`), sem `pdfjs-dist` (DEC-012). Build verde; **conferido na tela pelo dono em 2026-11-12: 6/6 ok.**
 **[0.1.7]** — 2026-11-11 — Abas: cada arquivo aberto tem rolagem e estado de UI próprios (FIX-003). **Conferido na tela pelo dono: 6/6 ok.**
 **[0.1.6]** — 2026-07-07 — CSV: navegação por Tab entre células durante a edição. **Confirmado aplicado** (o `CsvViewer.jsx` do snapshot do Projeto de 2026-11-06 contém `commitValue`/`commitAndMove`, o handler de Tab e o rodapé novo). O commit posterior `f626337` ("correcao asu0003", 2026-07-24) não foi inspecionado — ver Backlog.
 **[0.1.5]** — 2026-07-07 — JSON Formulário: edição inline no `RowDetailModal` e nas células do `ArrayTable`. **Confirmado aplicado** (conferido no disco: `JsonViewer.jsx` bate com o `260707-asu0002.yaml`).
@@ -27,7 +27,7 @@
 - **Sistema de documentação (meta/) — modo Code desde 2026-11-10 (DEC-011):** CEREBRO.md (base KCM v1.135.0) + 10 docs + `SPEC.md` + `workorders/` + logs; `CLAUDE.md`, `.claude/` (skills `/apply-wo`, `/wrap`, `/sondar`) e `INSTRUCOES-DO-PROJETO.md` na raiz. ASU desligado.
 
 ## 🔧 Em Progresso
-- Nada em andamento no produto. A 0.1.8 (DEC-012) está no ar; falta a conferência na tela pelo dono. **Volta atrás combinada:** se o visual nativo não agradar, a opção C (abrir o PDF numa aba nova do navegador) está registrada em IDEAS → Adiadas.
+- Nada em andamento no produto. **Volta atrás combinada:** se o visual nativo do PDF não agradar, a opção C (abrir o PDF numa aba nova do navegador) está registrada em IDEAS → Adiadas.
 
 ## ❌ Quebrado / Com Problema
 - Nenhum bug conhecido no produto.
