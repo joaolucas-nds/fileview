@@ -10,6 +10,18 @@
 
 ---
 
+## [0.1.10] — 2026-11-17
+### Adicionado
+- **Fechar com alteração não salva pergunta antes:** o ✕ da aba e o da barra lateral pedem confirmação; fechar ou recarregar a aba do navegador mostra o aviso do navegador.
+- **CSV — Desfazer exclusão de linha:** a exclusão usa um ícone de lixeira (o ✕ fica só para cancelar edição) e a barra mostra «Linha N excluída · Desfazer».
+
+### Modificado
+- **CSV — «+ Linha» com filtro ativo:** limpa o filtro e já abre a primeira célula da linha nova (antes a linha nova não aparecia).
+- **CSV — ordenação:** o 3º clique no cabeçalho volta à ordem do arquivo.
+- **CSV e JSON regravam no formato do arquivo:** mesmo fim de linha (LF ou CRLF), mesma quebra final e, no JSON, o mesmo recuo (tab ou N espaços). Antes qualquer edição reescrevia o arquivo inteiro.
+
+---
+
 ## [0.1.9] — 2026-11-17
 ### Corrigido
 - **JSON — edição que não serve ao tipo não grava mais (FIX-004):** «abc» num número virava `null` (e o campo nunca mais voltava a ser número), vazio virava `0`. Agora o campo fica aberto com borda vermelha e o motivo ao passar o mouse; Esc cancela. `true`/`false` aceitam maiúsculas. Um `null` passa a aceitar qualquer valor (número, true/false ou texto).

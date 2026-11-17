@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import Papa from 'papaparse'
+import { Trash2 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 
 export default function CsvViewer() {
@@ -38,9 +39,12 @@ export default function CsvViewer() {
     return rows
   }, [data, search, sortCol, sortDir, headers])
 
+  // Clique no cabecalho: crescente → decrescente → sem ordenacao (analise
+  // 261117, U4 — antes nao havia como voltar a ordem do arquivo).
   const handleSort = (i) => {
-    if (sortCol === i) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
-    else { setSortCol(i); setSortDir('asc') }
+    if (sortCol !== i) { setSortCol(i); setSortDir('asc'); return }
+    if (sortDir === 'asc') { setSortDir('desc'); return }
+    setSortCol(null); setSortDir('asc')
   }
 
   const startEdit = (dataIdx, colIdx, val) => {
@@ -51,12 +55,22 @@ export default function CsvViewer() {
   // gravacao em si (`commitValue`) para ser reaproveitada tambem pela
   // navegacao Tab (`commitAndMove`), que precisa commitar E abrir a proxima
   // celula na mesma chamada, sem passar pelo estado intermediario null.
+  // Regrava o CSV no formato do arquivo aberto: mesmo fim de linha (o
+  // Papa.unparse usa CRLF por padrao) e a quebra final, se havia. Antes toda
+  // edicao num CSV LF reescrevia o arquivo inteiro (analise 261117, decisao 3).
+  // `columns` fixa a ordem das colunas pelo cabecalho original.
+  const serialize = (rows) => {
+    const nl = activeFile.content.includes('\r\n') ? '\r\n' : '\n'
+    const out = Papa.unparse(rows, { newline: nl, columns: headers })
+    return activeFile.content.endsWith('\n') ? out + nl : out
+  }
+
   const commitValue = (dataIdx, col, val) => {
     const colName = headers[col]
     const newData = data.map((r, i) =>
       i === dataIdx ? { ...r, [colName]: val } : r
     )
-    updateContent(activeFile.id, Papa.unparse(newData))
+    updateContent(activeFile.id, serialize(newData))
   }
 
   const commitEdit = () => {
@@ -88,14 +102,32 @@ export default function CsvViewer() {
   const cancelEdit = () => setEditCell(null)
 
 
+  // + Linha: com filtro ativo a linha nova (vazia) nao passaria no filtro e o
+  // botao pareceria nao fazer nada (analise 261117, U11) — limpa o filtro e ja
+  // abre a primeira celula da linha nova.
   const addRow = () => {
     const emptyRow = Object.fromEntries(headers.map(h => [h, '']))
-    updateContent(activeFile.id, Papa.unparse([...data, emptyRow]))
+    updateContent(activeFile.id, serialize([...data, emptyRow]))
+    setSearch('')
+    if (headers.length) startEdit(data.length, 0, '')
   }
 
+  // Ultima linha excluida, para o «Desfazer» da barra (analise 261117, U2):
+  // excluir e um clique, entao precisa voltar com outro.
+  const [lastDeleted, setLastDeleted] = useState(null) // { dataIdx, row }
+
   const deleteRow = (dataIdx) => {
+    setLastDeleted({ dataIdx, row: data[dataIdx] })
     const newData = data.filter((_, i) => i !== dataIdx)
-    updateContent(activeFile.id, Papa.unparse(newData))
+    updateContent(activeFile.id, serialize(newData))
+  }
+
+  const undoDelete = () => {
+    if (!lastDeleted) return
+    const { dataIdx, row } = lastDeleted
+    const newData = [...data.slice(0, dataIdx), row, ...data.slice(dataIdx)]
+    updateContent(activeFile.id, serialize(newData))
+    setLastDeleted(null)
   }
 
   if (!activeFile) return null
@@ -129,6 +161,16 @@ export default function CsvViewer() {
         <span style={{ color: 'var(--text-faint)', fontSize: '12px' }}>
           {filtered.length} / {data.length} linhas · {headers.length} colunas
         </span>
+        {lastDeleted && (
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            Linha {lastDeleted.dataIdx + 1} excluída ·
+            <button onClick={undoDelete} style={{
+              fontSize: '11px', padding: '3px 8px', borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border)', background: 'var(--surface)',
+              color: 'var(--text)', cursor: 'pointer',
+            }}>Desfazer</button>
+          </span>
+        )}
         <button
           onClick={addRow}
           style={{
@@ -240,7 +282,9 @@ export default function CsvViewer() {
                         }}
                         onMouseEnter={e => { e.currentTarget.style.color = 'var(--red)'; e.currentTarget.style.background = 'var(--red-light)' }}
                         onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-faint)'; e.currentTarget.style.background = 'transparent' }}
-                      >✕</button>
+                        title="Excluir linha (dá para desfazer na barra de cima)"
+                        aria-label="Excluir linha"
+                      ><Trash2 size={13} /></button>
                     </td>
                   </tr>
                 )
@@ -254,7 +298,7 @@ export default function CsvViewer() {
         padding: '4px 16px', borderTop: '1px solid var(--border)',
         background: 'var(--surface)', fontSize: '11px', color: 'var(--text-faint)', flexShrink: 0,
       }}>
-        Duplo clique numa célula para editar · Tab move entre células (confirma) · Enter confirma · Esc ou ✕ cancela · clique no cabeçalho para ordenar
+        Duplo clique numa célula para editar · Tab move entre células (confirma) · Enter confirma · Esc ou ✕ cancela · clique no cabeçalho ordena (3º clique tira a ordem) · lixeira exclui a linha (Desfazer na barra)
       </div>
     </div>
   )

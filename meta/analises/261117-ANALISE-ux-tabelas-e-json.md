@@ -1,6 +1,6 @@
 # ANÁLISE — UX das tabelas (CSV e JSON) e para onde levá-las
 
-> **Status:** Em discussão
+> **Status:** Decidida (2026-11-17 — ver «Decisão do dono» no fim; registro em DEC-013)
 > **Data:** 2026-11-17
 > **Nasceu de:** pedido do dono em 2026-11-17 — «a Mapoteca pode ensinar formas de trabalhar com tabelas (filtrar, ordenar, agrupar); o mesmo para o JSON, com cards para campos repetidos como um banco» + «verifique o código e veja o que foge das recomendações de UX/UI». Os defeitos já CONFIRMADOS (FIX-004, FIX-005) não estão em discussão: vão direto pela wo0005.
 
@@ -72,3 +72,24 @@ Três respostas do dono:
 1. **Direção:** grade compartilhada (B) com as fases 1→5 nesta ordem — sim, ou outra ordem?
 2. **Biblioteca:** pesquisar TanStack Table/AG Grid (C) antes da fase 2, ou escrever a lógica na mão?
 3. **Recuo do JSON (J6):** preservar o recuo original do arquivo ao salvar (recomendado: detectar 2/4 espaços ou tab na abertura) — sim ou não?
+
+## Decisão do dono (2026-11-17)
+
+`[relatado pelo dono]` «fases como recomendado; pesquisar biblioteca; preservar o recuo».
+
+1. **Direção:** grade compartilhada (B), fases 1→5 na ordem recomendada. Fase 1 = wo0006.
+2. **Biblioteca:** pesquisada no mesmo dia — resultado abaixo.
+3. **Recuo do JSON (J6):** preservar o formato do arquivo ao salvar. A medição mostrou que o CSV tem o MESMO problema e foi incluído junto na fase 1: `Papa.unparse` grava com CRLF e tira a quebra final — medido na VM com `papaparse@5.4.1`: `P.unparse(P.parse('id,nome\n1,Ana\n2,Bo\n',{header:true,skipEmptyLines:true}).data)` → `"id,nome\r\n1,Ana\r\n2,Bo"`; qualquer edição num CSV LF reescrevia o arquivo inteiro.
+
+## Pesquisa de biblioteca (2026-11-17, para a fase 2)
+
+| Opção | Licença | O que cobre do plano | Tamanho | Por que sim / por que não |
+|---|---|---|---|---|
+| **TanStack Table v8** (`@tanstack/react-table`) | MIT | ordenação multi-coluna, filtro por coluna e global, **facetas** (valores únicos com contagem, mín/máx), **agrupar + agregação**, expandir, larguras de coluna | ~14,6 kB gzip (8.21.3, bundlephobia, citado pela Vercel) | **Headless**: toda a lógica das fases 3–4, nenhum visual imposto — a grade continua com a cara do FileView. Contra: navegação de célula por teclado e edição são nossas (fase 2). v9 está em beta — fica a v8 estável. |
+| AG Grid Community | MIT | ordenar, filtrar, editar, virtualização | ~200 kB | **Agrupar e agregação, menu de coluna e área de transferência são Enterprise** (licença paga, US$ 999 por desenvolvedor) — justamente as fases 3–4. Descartada. |
+| react-data-grid (adazzle) | MIT | edição de célula, teclado, copiar/colar, ordenação multi-coluna, agrupar, virtualização | pequeno, sem dependências | O mais completo «pronto». Contra: a linha 7 está em beta há anos e as versões recentes declaram React 19 (`[a confirmar no package.json dela antes de usar]`); o FileView está em React 18.3. Segunda opção, se a navegação por teclado da fase 2 sair cara. |
+| MUI X Data Grid | MIT (base) | edição, filtro e ordenação de UMA coluna | grande | Agrupar é do plano Premium (pago); traz o visual do Material UI. Descartada. |
+
+**Escolha:** TanStack Table v8 + o visual nosso (e TanStack Virtual quando a medição de desempenho pedir). Registrada em DEC-013.
+
+Fontes: tanstack.com/table (v8 e v9, guias de recursos); vercel.com/i/tanstack-table (tamanho 8.21.3); ag-grid.com (Community vs Enterprise, preço); github.com/ag-grid/ag-grid (tabela de recursos); npm/cloudsmith react-data-grid 7.0.0-beta; mui.com/x (licenças).

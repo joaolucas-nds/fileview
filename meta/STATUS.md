@@ -6,7 +6,8 @@
 ---
 
 ## Versão Atual
-**[0.1.9]** — 2026-11-17 — JSON: edição que não serve ao tipo não grava mais (era `null`/`0` em silêncio) e chave com ponto passa a ser editável (FIX-004); CSV: abrir uma célula não rearranja mais a tabela (FIX-005). Build verde; **conferência na tela pendente** (roteiro do dono, conversa de 2026-11-17).
+**[0.1.10]** — 2026-11-17 — Fase 1 da grade (DEC-013): fechar com alteração não salva pergunta; CSV com lixeira + Desfazer, «+ Linha» visível com filtro, 3º clique tira a ordenação; CSV e JSON regravam no formato do arquivo (fim de linha, recuo, quebra final). Build verde; **conferência na tela pendente** (roteiro do dono, conversa de 2026-11-17).
+**[0.1.9]** — 2026-11-17 — JSON: edição que não serve ao tipo não grava mais (era `null`/`0` em silêncio) e chave com ponto passa a ser editável (FIX-004); CSV: abrir uma célula não rearranja mais a tabela (FIX-005). Build verde; **conferido na tela pelo dono em 2026-11-17: 13/13 ok.**
 **[0.1.8]** — 2026-11-11 — PDF no visualizador nativo do navegador (`<iframe>`), sem `pdfjs-dist` (DEC-012). Build verde; **conferido na tela pelo dono em 2026-11-12: 6/6 ok.**
 **[0.1.7]** — 2026-11-11 — Abas: cada arquivo aberto tem rolagem e estado de UI próprios (FIX-003). **Conferido na tela pelo dono: 6/6 ok.**
 **[0.1.6]** — 2026-07-07 — CSV: navegação por Tab entre células durante a edição. **Confirmado aplicado** (o `CsvViewer.jsx` do snapshot do Projeto de 2026-11-06 contém `commitValue`/`commitAndMove`, o handler de Tab e o rodapé novo). O commit posterior `f626337` ("correcao asu0003", 2026-07-24) não foi inspecionado — ver Backlog.
@@ -36,7 +37,7 @@
 ## 📋 Backlog (curto prazo — itens acionáveis)
 - [ ] **Busca Ctrl+F no SourceEditor** — highlight de ocorrências no textarea.
 - [ ] **Tooltips customizados** na toolbar do editor MD.
-- [ ] **Responder a análise `meta/analises/261117-ANALISE-ux-tabelas-e-json.md`** — direção das tabelas (grade compartilhada CSV + JSON, fases 1→5), biblioteca ou à mão, e se o JSON preserva o recuo original ao salvar. Lá estão também os achados de UX ainda abertos (fechar sem salvar descarta, ✕ duplo no CSV, sem desfazer).
+- [ ] **Fase 2 da grade (DEC-013):** `DataGrid` compartilhado pelo CSV e pelo `ArrayTable`, sobre TanStack Table v8; largura de coluna estável; célula selecionada com teclado; desfazer por arquivo. Plano em `meta/analises/261117-ANALISE-ux-tabelas-e-json.md` e ROADMAP F2b.
 - [ ] **Atualizar o `README.md` e decidir a versão do `package.json`** — README sem o modo Formulário, edição inline e Tab do CSV; `package.json` ainda em `0.1.0` (CHANGELOG está em 0.1.8). Decidir se a versão do package acompanha o CHANGELOG.
 
 ## 💬 Última conversa

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 
 const AppContext = createContext(null)
 
@@ -6,6 +6,17 @@ export function AppProvider({ children }) {
   const [files, setFiles] = useState([])
   const [activeId, setActiveId] = useState(null)
   const [modes, setModes] = useState({})
+
+  // Fechar ou recarregar a aba do navegador com alteracao nao salva: o navegador
+  // mostra o aviso padrao dele (o texto e do navegador, nao nosso). Analise
+  // 261117, G1 — antes, tudo se perdia sem pergunta.
+  const anyDirty = files.some(f => f.isDirty)
+  useEffect(() => {
+    if (!anyDirty) return
+    const onBeforeUnload = (e) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [anyDirty])
 
   const openFile = useCallback(async (file) => {
     const ext = file.name.split('.').pop().toLowerCase()
@@ -45,6 +56,10 @@ export function AppProvider({ children }) {
   }, [])
 
   const closeFile = useCallback((id) => {
+    // Arquivo com alteracao nao salva: pergunta antes de descartar (analise
+    // 261117, G1). Vale para o ✕ da aba e o da barra lateral, que chamam aqui.
+    const target = files.find(f => f.id === id)
+    if (target?.isDirty && !window.confirm(`"${target.name}" tem alterações não salvas. Fechar e descartar?`)) return
     setFiles(prev => {
       const fileToClose = prev.find(f => f.id === id)
       // Revogar Blob URL do PDF para não vazar memória
@@ -61,7 +76,7 @@ export function AppProvider({ children }) {
       return next
     })
     setModes(prev => { const n = { ...prev }; delete n[id]; return n })
-  }, [])
+  }, [files])
 
   const updateContent = useCallback((id, newContent) => {
     setFiles(prev => prev.map(f =>

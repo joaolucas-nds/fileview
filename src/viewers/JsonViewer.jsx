@@ -192,6 +192,20 @@ function inferValue(t) {
   return Number.isFinite(n) ? n : t
 }
 
+// Regrava o JSON no formato do arquivo aberto (analise 261117, J6): mesmo
+// recuo (tab ou N espacos, lido na primeira linha recuada), mesmo fim de linha
+// (CRLF ou LF) e a quebra final, se havia; arquivo sem quebra de linha continua
+// numa linha so. Antes toda edicao regravava o arquivo inteiro com 2 espacos e
+// LF, e o diff de um arquivo versionado virava o arquivo todo.
+function serializeLike(obj, original) {
+  if (!original.includes('\n')) return JSON.stringify(obj)
+  const m = original.match(/\n([ \t]+)\S/)
+  const indent = m ? (m[1][0] === '\t' ? '\t' : m[1].length) : 2
+  let out = JSON.stringify(obj, null, indent)
+  if (original.endsWith('\n')) out += '\n'
+  return original.includes('\r\n') ? out.replace(/\n/g, '\r\n') : out
+}
+
 // Valor tipado com cor
 function TypedValue({ value }) {
   const type = value === null ? 'null' : typeof value
@@ -764,7 +778,7 @@ export default function JsonViewer() {
       let ref = obj
       for (let i = 0; i < parts.length - 1; i++) ref = ref[parts[i]]
       ref[parts[parts.length - 1]] = newVal
-      updateContent(activeFile.id, JSON.stringify(obj, null, 2))
+      updateContent(activeFile.id, serializeLike(obj, activeFile.content))
     } catch {}
   }, [activeFile, updateContent])
 

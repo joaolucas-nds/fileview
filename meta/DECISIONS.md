@@ -246,6 +246,28 @@ Menos código (o `PdfViewer.jsx` cai de 152 para ~15 linhas) e menos uma depend�
 
 ---
 
+## DEC-013 — Tabelas: grade compartilhada (CSV + JSON) sobre TanStack Table v8, em fases; arquivos regravados no formato original
+**Data:** 2026-11-17 · **Status:** aceita
+
+### Contexto
+O dono pediu tabelas melhores (filtrar, ordenar, agrupar — com a Mapoteca como referência) e cards para registros repetidos no JSON; a revisão de UX do código achou perda de dado possível (fechar sem salvar, excluir linha sem desfazer) e arquivos inteiros reescritos a cada edição. Raciocínio completo em `meta/analises/261117-ANALISE-ux-tabelas-e-json.md`.
+
+### Decisão
+1. Uma **grade de dados compartilhada** pelo CSV e pelos arrays de objetos do JSON, em cinco fases: (1) segurança — wo0006; (2) base da grade com teclado e desfazer; (3) filtro por coluna com facetas e chips + ordenação em níveis; (4) agrupar com totais; (5) vista de cards.
+2. **Lógica de tabela: TanStack Table v8** (MIT, headless, ~15 kB gzip), visual do FileView.
+3. **Arquivo editado volta no formato em que chegou** — fim de linha, quebra final e, no JSON, o recuo.
+
+### Alternativas consideradas
+- **Melhorar cada tabela onde está** — cada recurso escrito duas vezes e divergindo (a Mapoteca registrou que motores de filtro paralelos mataram o projeto anterior).
+- **AG Grid Community** — agrupar, agregação e menu de coluna são Enterprise (pago).
+- **react-data-grid** — o mais pronto (teclado, edição), mas em beta há anos e as versões recentes pedem React 19 `[a confirmar]`; segunda opção se o teclado da fase 2 sair caro.
+- **MUI X** — agrupar é pago; impõe o visual do Material.
+
+### Consequências
+A fase 2 é um refactor do `JsonViewer.jsx` e do `CsvViewer.jsx` sem recurso grande visível — entra junto com a seleção de célula por teclado para não ficar invisível. Cada fase fecha com roteiro do dono. O roteiro de 2026-11-12 (CSV Tab, edição do JSON) e o da 0.1.9 viram a rede de regressão da grade nova.
+
+---
+
 ## FIX-001 — PDF: ArrayBuffer detachado ao remontar o viewer
 **Data:** 2026-06-05 · **Status:** resolvida
 
