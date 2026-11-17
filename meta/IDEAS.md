@@ -20,6 +20,9 @@ A tabela atual funciona mas não é fluida como planilha real. Melhorias desejad
 
 ## 🤖 Ideias Ativas — Assistente
 
+### 2026-11-17 — Tabelas: grade compartilhada (CSV + arrays do JSON), filtro por coluna, agrupar e vista de cards
+Pedido do dono, com a Mapoteca como referência. Raciocínio, achados de UX e fases em `meta/analises/261117-ANALISE-ux-tabelas-e-json.md` (Em discussão) — esta entrada só aponta para lá.
+
 ### 2026-11-11 — Ctrl+roda como zoom do conteúdo (MD, JSON, CSV, texto)
 O Chrome entrega Ctrl+roda à página primeiro: um listener de `wheel` com `{passive: false}` que chama `preventDefault()` quando `ctrlKey` é verdadeiro troca o zoom da página pelo zoom do FileView (é o que Google Maps e Canva fazem; a pinça do touchpad chega como o mesmo evento). Aplicaria um tamanho de fonte por aba nos viewers de texto. O PDF já tem isso de graça desde a 0.1.8 (DEC-012).
 
@@ -34,9 +37,6 @@ Arrays simples (chips) no FormView continuam read-only — a edição inline nes
 
 ### 2026-11-07 — CSV: Tab na última célula da última linha cria uma linha nova
 Hoje, nas bordas da tabela, Tab/Shift+Tab só fecha a edição (decisão de escopo mínimo da sessão 3 de 2026-07-07). Excel/Sheets criam/avançam para a próxima linha. Se vier: `addRow` + abrir a 1ª célula da linha nova. Cuidado com filtro ativo — a linha nova (vazia) pode não passar no filtro e "sumir" da vista; mesma classe de risco do FIX-002.
-
-### 2026-11-07 — JSON Formulário: validar o tipo ao editar (number/boolean/null)
-`parseEditedValue` (JsonViewer.jsx) faz `Number(text)` — texto inválido vira `NaN`, que `JSON.stringify` grava como `null` (perde o dado em silêncio); `null` editado volta sempre `null` (não dá para trocar o tipo); boolean diferente de `"true"` vira `false`. Ideia: rejeitar entrada inválida (borda vermelha, sem commit) e/ou oferecer troca de tipo. Confirmar o comportamento no navegador antes de mexer.
 
 ### 2026-11-07 — README: atualizar e ilustrar
 O README não cita o modo Formulário, a edição inline nem o Tab do CSV. Capturas que valem: (1) Formulário nos 3 layouts com um `ArrayTable`; (2) `RowDetailModal` com um campo em edição (textarea); (3) CSV com uma célula em edição + rodapé de dicas; (4) Árvore JSON com um nó em edição. Imagens não geradas — são capturas do usuário.
@@ -84,6 +84,7 @@ O `title` HTML já existe em todos os botões. Tooltips visuais com delay melhor
 - **JSON formulário: edição inline no RowDetailModal e nas células do ArrayTable** — 2026-07-07 (sessão 2). Ver DEC-010, STATUS/CHANGELOG 0.1.5.
 - **CSV: navegação por Tab entre células** — Tab confirma e move para a próxima coluna/linha (Shift+Tab volta), seguindo a ordem visível (`filtered`). 2026-07-07 (sessão 3). Ver STATUS/CHANGELOG 0.1.6.
 - **Migração ASU → modo Code** — 2026-11-10, junto do merge do KCM v1.135.0. Ver DEC-011.
+- **JSON Formulário: validar o tipo ao editar** (ideia de 2026-11-07) — 0.1.9, FIX-004: texto que não serve ao tipo não grava; `null` infere o tipo.
 
 ---
 

@@ -13,7 +13,7 @@ const TYPE_COLOR = {
 
 // ─── Modo Árvore (inalterado) ────────────────────────────────────────────────
 
-function JsonNode({ keyName, value, depth = 0, path = '', onUpdate }) {
+function JsonNode({ keyName, value, depth = 0, path = [], onUpdate }) {
   const [collapsed, setCollapsed] = useState(depth > 2)
   const [editing, setEditing] = useState(false)
   const [editVal, setEditVal] = useState('')
@@ -22,20 +22,23 @@ function JsonNode({ keyName, value, depth = 0, path = '', onUpdate }) {
   const isLeaf = type !== 'object' && type !== 'array'
   const indent = depth * 18
 
+  // Erro de tipo da edicao em curso (FIX-004): com erro o valor NAO e gravado,
+  // o campo fica aberto com borda vermelha e o motivo no title.
+  const [editErr, setEditErr] = useState(null)
+
   const startEdit = () => {
     if (!isLeaf) return
     setEditVal(type === 'string' ? value : String(value))
+    setEditErr(null)
     setEditing(true)
   }
 
   const commitEdit = () => {
+    const r = parseEditedValue(value, editVal)
+    if (!r.ok) { setEditErr(r.error); return }
+    setEditErr(null)
     setEditing(false)
-    let parsed
-    if (type === 'number') parsed = Number(editVal)
-    else if (type === 'boolean') parsed = editVal === 'true'
-    else if (type === 'null') parsed = null
-    else parsed = editVal
-    if (onUpdate) onUpdate(path, parsed)
+    if (onUpdate) onUpdate(path, r.value)
   }
 
   const renderValue = () => {
@@ -46,10 +49,11 @@ function JsonNode({ keyName, value, depth = 0, path = '', onUpdate }) {
           value={editVal}
           onChange={e => setEditVal(e.target.value)}
           onBlur={commitEdit}
+          title={editErr || undefined}
           onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditing(false) }}
           style={{
             fontSize: '13px', fontFamily: 'var(--font-mono)',
-            border: '1px solid var(--accent)', borderRadius: '3px',
+            border: `1px solid ${editErr ? 'var(--red)' : 'var(--accent)'}`, borderRadius: '3px',
             padding: '1px 6px', background: 'var(--accent-light)',
             color: 'var(--text)', outline: 'none', minWidth: '60px',
           }}
@@ -95,7 +99,7 @@ function JsonNode({ keyName, value, depth = 0, path = '', onUpdate }) {
         {!collapsed && (
           <>
             {entries.map(([k, v]) => (
-              <JsonNode key={String(k)} keyName={k} value={v} depth={depth + 1} path={path ? `${path}.${k}` : String(k)} onUpdate={onUpdate} />
+              <JsonNode key={String(k)} keyName={k} value={v} depth={depth + 1} path={[...path, k]} onUpdate={onUpdate} />
             ))}
             <div style={{ paddingLeft: `${indent}px`, fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--text-muted)', minHeight: '20px' }}>
               {bracket[1]}
@@ -151,14 +155,41 @@ function isEditablePrimitive(v) {
   return ['string', 'number', 'boolean', 'null'].includes(t)
 }
 
-// Converte o texto digitado de volta pro tipo original do valor. Compartilhado
-// por ArrayTable e RowDetailModal (mesma regra do Field/JsonNode).
+// Converte o texto digitado de volta para um valor JSON. Usado por TODOS os
+// pontos de edicao (Arvore, Field, celulas do ArrayTable, RowDetailModal).
+// Devolve { ok: true, value } ou { ok: false, error }: com ok === false quem
+// chama NAO grava e mantem o campo aberto (FIX-004). Antes, «abc» num numero
+// virava NaN, que o JSON.stringify grava como null, e o campo nunca mais
+// voltava a ser numero; vazio virava 0; e um null nao saia de null.
+// - string: o texto como esta;
+// - number: numero finito; vazio ou texto e invalido;
+// - boolean: true/false, sem diferenciar maiusculas;
+// - null: o tipo sai do que foi digitado (inferValue) — e o unico jeito de
+//   um null deixar de ser null.
 function parseEditedValue(original, text) {
   const type = original === null ? 'null' : typeof original
-  if (type === 'number') return Number(text)
-  if (type === 'boolean') return text === 'true'
-  if (type === 'null') return null
-  return text
+  const t = text.trim()
+  if (type === 'string') return { ok: true, value: text }
+  if (type === 'number') {
+    const n = Number(t)
+    return t !== '' && Number.isFinite(n) ? { ok: true, value: n } : { ok: false, error: 'Não é um número' }
+  }
+  if (type === 'boolean') {
+    const low = t.toLowerCase()
+    return low === 'true' || low === 'false'
+      ? { ok: true, value: low === 'true' }
+      : { ok: false, error: 'Use true ou false' }
+  }
+  return { ok: true, value: inferValue(t) }
+}
+
+// Tipo de um valor digitado onde antes havia null: vazio ou «null» continua
+// null; true/false viram boolean; numero vira number; o resto e string.
+function inferValue(t) {
+  if (t === '' || t === 'null') return null
+  if (t === 'true' || t === 'false') return t === 'true'
+  const n = Number(t)
+  return Number.isFinite(n) ? n : t
 }
 
 // Valor tipado com cor
@@ -174,7 +205,7 @@ function TypedValue({ value }) {
 
 // Campo label + valor. Edição inline (2026-07-07): duplo clique no valor primitivo
 // abre um input (mesmo padrão da Árvore) — Enter confirma via `onUpdate(path, valor)`,
-// Esc cancela. `path` é a chave dotted (ex.: "user.address.city") resolvida pelo
+// Esc cancela. `path` é a LISTA de chaves (ex.: ["user", "address", "city"]) resolvida pelo
 // chamador (SectionContent) e repassada até aqui; sem `path`/`onUpdate` o campo
 // permanece read-only (usado, por ex., por chamadores que ainda não repassam isso).
 function Field({ label, value, path, onUpdate }) {
@@ -184,21 +215,24 @@ function Field({ label, value, path, onUpdate }) {
   const [editing, setEditing] = useState(false)
   const [editVal, setEditVal] = useState('')
 
+  // Erro de tipo da edicao em curso (FIX-004) — mesma regra da Arvore.
+  const [editErr, setEditErr] = useState(null)
+
   const startEdit = () => {
     if (!canEdit) return
     setEditVal(type === 'string' ? value : String(value))
+    setEditErr(null)
     setEditing(true)
   }
 
-  // Converte o texto digitado de volta pro tipo original antes de gravar
+  // Converte o texto digitado de volta pro tipo original antes de gravar;
+  // texto que nao serve ao tipo nao grava (FIX-004).
   const commitEdit = () => {
+    const r = parseEditedValue(value, editVal)
+    if (!r.ok) { setEditErr(r.error); return }
+    setEditErr(null)
     setEditing(false)
-    let parsed
-    if (type === 'number') parsed = Number(editVal)
-    else if (type === 'boolean') parsed = editVal === 'true'
-    else if (type === 'null') parsed = null
-    else parsed = editVal
-    onUpdate(path, parsed)
+    onUpdate(path, r.value)
   }
 
   return (
@@ -211,10 +245,11 @@ function Field({ label, value, path, onUpdate }) {
             value={editVal}
             onChange={e => setEditVal(e.target.value)}
             onBlur={commitEdit}
+            title={editErr || undefined}
             onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditing(false) }}
             style={{
               fontSize: '12px', fontFamily: 'var(--font-mono)',
-              border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)',
+              border: `1px solid ${editErr ? 'var(--red)' : 'var(--accent)'}`, borderRadius: 'var(--radius-sm)',
               padding: '3px 8px', background: 'var(--accent-light)',
               color: 'var(--text)', outline: 'none', width: '100%',
             }}
@@ -255,7 +290,7 @@ const pageBtn = (disabled) => ({
 // (DEC-008) é justamente texto longo — Enter insere quebra de linha em vez de
 // confirmar; só Esc cancela ou o blur confirma. Number/boolean/null usam Enter
 // para confirmar, como em qualquer outro campo do projeto. `path`/`rowIdx` vêm
-// do ArrayTable — o path final é `${path}.${rowIdx}.${chave}`, usando o índice
+// do ArrayTable — o caminho final é [...path, rowIdx, chave], usando o índice
 // ORIGINAL da linha no array (não a posição pós-paginação — mesma classe de
 // cuidado do FIX-002 no CSV). Sem `onUpdate`/`path`/`rowIdx`, o modal continua
 // read-only (uso defensivo, não deveria ocorrer no fluxo atual).
@@ -264,14 +299,21 @@ function RowDetailModal({ row, rowIdx, path, onUpdate, onClose }) {
   const [editKey, setEditKey] = useState(null)
   const [editVal, setEditVal] = useState('')
 
+  // Erro de tipo da edicao em curso (FIX-004).
+  const [editErr, setEditErr] = useState(null)
+
   const startEdit = (k, v) => {
     if (!canEdit || !isEditablePrimitive(v)) return
     setEditVal(v === null ? '' : typeof v === 'string' ? v : String(v))
+    setEditErr(null)
     setEditKey(k)
   }
 
   const commitEdit = (k, original) => {
-    onUpdate(`${path}.${rowIdx}.${k}`, parseEditedValue(original, editVal))
+    const r = parseEditedValue(original, editVal)
+    if (!r.ok) { setEditErr(r.error); return }
+    setEditErr(null)
+    onUpdate([...path, rowIdx, k], r.value)
     setEditKey(null)
   }
 
@@ -320,6 +362,7 @@ function RowDetailModal({ row, rowIdx, path, onUpdate, onClose }) {
                     autoFocus
                     value={editVal}
                     onChange={e => setEditVal(e.target.value)}
+                    title={editErr || undefined}
                     onBlur={() => commitEdit(k, v)}
                     onKeyDown={e => {
                       // Em campos não-string (number/boolean/null) Enter confirma, como
@@ -330,7 +373,7 @@ function RowDetailModal({ row, rowIdx, path, onUpdate, onClose }) {
                     }}
                     rows={typeof v === 'string' && v.length > 60 ? 5 : 1}
                     style={{
-                      background: 'var(--accent-light)', border: '1px solid var(--accent)',
+                      background: 'var(--accent-light)', border: `1px solid ${editErr ? 'var(--red)' : 'var(--accent)'}`,
                       borderRadius: 'var(--radius-sm)', padding: '6px 10px',
                       fontSize: '12px', fontFamily: 'var(--font-mono)',
                       whiteSpace: 'pre-wrap', wordBreak: 'break-word',
@@ -375,7 +418,7 @@ function RowDetailModal({ row, rowIdx, path, onUpdate, onClose }) {
 // `click` do DOM dispara nos dois cliques de um duplo clique, não só o
 // `dblclick`). Padrão comum em listas (Explorer, Gmail) para essa ambiguidade.
 // `path` é a chave da seção (ex.: "users"); o path de cada célula editada é
-// `${path}.${índiceORIGINAL}.${coluna}` — índice original da linha no array
+// [...path, índiceORIGINAL, coluna] — índice original da linha no array
 // completo, não a posição pós-paginação (mesma classe de cuidado do FIX-002).
 const ROWS_PER_PAGE = 20
 const ROW_CLICK_DELAY = 220 // ms — janela para o 2º clique de um duplo clique chegar
@@ -407,11 +450,15 @@ function ArrayTable({ value, path, onUpdate }) {
     }, ROW_CLICK_DELAY)
   }
 
+  // Erro de tipo da edicao em curso (FIX-004).
+  const [editErr, setEditErr] = useState(null)
+
   const startCellEdit = (e, idx, col, val) => {
     e.stopPropagation()
     if (clickTimer.current) { clearTimeout(clickTimer.current); clickTimer.current = null }
     if (!canEdit || !isEditablePrimitive(val)) return
     setEditVal(val === null ? '' : typeof val === 'string' ? val : String(val))
+    setEditErr(null)
     setEditCell({ idx, col })
   }
 
@@ -419,7 +466,10 @@ function ArrayTable({ value, path, onUpdate }) {
     if (!editCell) return
     const { idx, col } = editCell
     const original = value[idx]?.[col] ?? null
-    onUpdate(`${path}.${idx}.${col}`, parseEditedValue(original, editVal))
+    const r = parseEditedValue(original, editVal)
+    if (!r.ok) { setEditErr(r.error); return }
+    setEditErr(null)
+    onUpdate([...path, idx, col], r.value)
     setEditCell(null)
   }
 
@@ -481,6 +531,7 @@ function ArrayTable({ value, path, onUpdate }) {
                             value={editVal}
                             onClick={e => e.stopPropagation()}
                             onChange={e => setEditVal(e.target.value)}
+                            title={editErr || undefined}
                             onBlur={commitCellEdit}
                             onKeyDown={e => {
                               if (e.key === 'Enter') commitCellEdit()
@@ -488,7 +539,7 @@ function ArrayTable({ value, path, onUpdate }) {
                             }}
                             style={{
                               width: '100%', fontSize: '12px', fontFamily: 'var(--font-mono)',
-                              border: '1px solid var(--accent)', borderRadius: '3px',
+                              border: `1px solid ${editErr ? 'var(--red)' : 'var(--accent)'}`, borderRadius: '3px',
                               padding: '3px 6px', background: 'var(--accent-light)',
                               color: 'var(--text)', outline: 'none',
                             }}
@@ -537,27 +588,28 @@ function PrimitiveList({ value }) {
 }
 
 // Conteúdo de seção — compartilhado pelos 3 layouts.
-// `onUpdate` (opcional) é repassado ao Field/ArrayTable com o `path` dotted certo:
-// seção primitiva solta → path = section.key; seção objeto → path = "section.key.campo";
-// seção array de objetos → path = section.key (o ArrayTable completa com ".idx.coluna").
+// `onUpdate` (opcional) é repassado ao Field/ArrayTable com o caminho certo, como
+// LISTA de chaves (FIX-004 — chave com ponto, como "config.tema", quebrava o texto
+// pontuado): seção primitiva solta → [section.key]; seção objeto → [section.key, campo];
+// seção array de objetos → [section.key] (o ArrayTable completa com idx e coluna).
 // Arrays de primitivos (chips) ainda não recebem edição inline nesta sessão.
 function SectionContent({ section, onUpdate }) {
   const { value, type, key } = section
   if (type === 'array') {
     return isArrayOfObjects(value)
-      ? <ArrayTable value={value} path={key} onUpdate={onUpdate} />
+      ? <ArrayTable value={value} path={[key]} onUpdate={onUpdate} />
       : <PrimitiveList value={value} />
   }
   if (type === 'object') {
     return (
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '10px' }}>
         {Object.entries(value).map(([k, v]) => (
-          <Field key={k} label={k} value={v} path={`${key}.${k}`} onUpdate={onUpdate} />
+          <Field key={k} label={k} value={v} path={[key, k]} onUpdate={onUpdate} />
         ))}
       </div>
     )
   }
-  return <Field label={section.key} value={value} path={section.key} onUpdate={onUpdate} />
+  return <Field label={section.key} value={value} path={[section.key]} onUpdate={onUpdate} />
 }
 
 // Layout A — Cards em grade.
@@ -707,7 +759,8 @@ export default function JsonViewer() {
     if (!activeFile) return
     try {
       const obj = JSON.parse(activeFile.content)
-      const parts = path.split('.')
+      // `path` e a lista de chaves (FIX-004): nunca dividir texto por ponto.
+      const parts = path
       let ref = obj
       for (let i = 0; i < parts.length - 1; i++) ref = ref[parts[i]]
       ref[parts[parts.length - 1]] = newVal
@@ -749,7 +802,7 @@ export default function JsonViewer() {
             ⚠ JSON inválido: {parseErr}
           </div>
         ) : parsed !== null ? (
-          <JsonNode value={parsed} depth={0} path="" onUpdate={handleUpdate} />
+          <JsonNode value={parsed} depth={0} path={[]} onUpdate={handleUpdate} />
         ) : (
           <div style={{ color: 'var(--text-faint)', fontSize: '13px' }}>Arquivo vazio.</div>
         )}

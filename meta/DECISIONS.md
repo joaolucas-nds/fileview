@@ -277,3 +277,25 @@ Menos código (o `PdfViewer.jsx` cai de 152 para ~15 linhas) e menos uma depend�
 - **Alternativas consideradas:** manter todos os viewers montados e esconder os inativos (preserva tudo, mas multiplica instâncias de Tiptap/PDF.js em memória); guardar e restaurar a rolagem por aba (melhor UX, mas o elemento que rola é diferente em cada viewer e o conteúdo chega assíncrono — fica como ideia no IDEAS).
 - **Lição:** componente que é TROCADO conforme o item ativo (aba, linha, arquivo) precisa de `key` com a identidade do item; sem ela, estado e DOM vazam entre itens em silêncio.
 - **Arquivo:** `src/components/ViewerRouter.jsx`
+
+---
+
+## FIX-004 — JSON: edição gravava `null`/`0` em silêncio e chave com ponto não era editável
+**Data:** 2026-11-17 · **Status:** resolvida
+
+- **Sintoma:** `[relatado pelo dono, roteiro de 2026-11-12, prints de 2026-11-17]` «abc» num número virou `null` e, depois disso, digitar número continuava `null`; campo numérico apagado virou `0`; `null` não aceitava outro valor; editar `"config.tema"` não mudava nada.
+- **Causa raiz:** (1) `parseEditedValue` convertia sem validar — `Number("abc")` é `NaN`, que o `JSON.stringify` grava como `null`; `Number("")` é `0`; e com o valor já `null`, o tipo de destino passava a ser `null` para sempre. (2) O caminho do campo era texto pontuado (`"config.tema"`) e o `handleUpdate` fazia `split('.')`: a chave com ponto virava dois níveis que não existem, o erro caía no `catch {}` vazio e a edição sumia. A Árvore e o `Field` tinham cópias próprias da mesma conversão.
+- **Solução:** `parseEditedValue` devolve `{ ok, value }` ou `{ ok: false, error }` e é a ÚNICA conversão (Árvore, `Field`, células do `ArrayTable`, `RowDetailModal`); com erro, nada grava e o campo fica aberto com borda vermelha e o motivo no `title`. `null` infere o tipo do que se digita (`inferValue`). O caminho virou LISTA de chaves em todos os pontos, e o `handleUpdate` não divide mais texto.
+- **Lição:** conversão de tipo que não pode falhar esconde a falha no dado. E caminho de dado em texto com separador quebra no primeiro nome que contém o separador — caminho é lista.
+- **Arquivo:** `src/viewers/JsonViewer.jsx`
+
+---
+
+## FIX-005 — CSV: abrir uma célula rearranjava a tabela na horizontal
+**Data:** 2026-11-17 · **Status:** resolvida
+
+- **Sintoma:** `[relatado pelo dono, 2026-11-17]` ao abrir uma célula para editar, a coluna mudava de largura e empurrava as outras; o dono não conseguiu printar porque o atalho de captura tira o foco e o `onBlur` fecha a edição.
+- **Causa raiz:** a tabela usa `table-layout` automático (a largura da coluna depende do conteúdo) e a edição TROCAVA o texto da célula por um `<input>` com largura própria mais o botão ✕, dentro do fluxo da célula.
+- **Solução:** o texto fica no lugar, invisível, segurando a largura; o `<input>` vai por cima da célula (`position: absolute; inset: 0`) e o ✕ fica fora, à direita, também por cima.
+- **Lição:** edição em célula não pode mudar a geometria da tabela — o editor se sobrepõe, não substitui. (A grade compartilhada da análise 261117 resolveria de vez com largura de coluna definida.)
+- **Arquivo:** `src/viewers/CsvViewer.jsx`

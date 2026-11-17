@@ -178,11 +178,21 @@ export default function CsvViewer() {
                     <td style={{ ...tdStyle, color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
                       {dataIdx + 1}
                     </td>
-                    {headers.map((h, ci) => (
-                      <td key={ci} style={tdStyle}
+                    {headers.map((h, ci) => {
+                      const isEditing = editCell?.dataIdx === dataIdx && editCell?.col === ci
+                      return (
+                      <td key={ci} style={isEditing ? { ...tdStyle, position: 'relative' } : tdStyle}
                         onDoubleClick={() => startEdit(dataIdx, ci, row[h] ?? '')}>
-                        {editCell?.dataIdx === dataIdx && editCell?.col === ci ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {/* O texto fica no lugar (invisivel durante a edicao) para a celula
+                            manter a largura: o campo de edicao vai POR CIMA dela e o ✕ fica
+                            fora, a direita. Antes o input entrava no fluxo da tabela, a
+                            coluna mudava de largura e a tabela inteira se rearranjava
+                            na horizontal ao abrir uma celula (FIX-005). */}
+                        <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', visibility: isEditing ? 'hidden' : 'visible' }}>
+                          {row[h] ?? ''}
+                        </span>
+                        {isEditing && (
+                          <>
                             <input
                               autoFocus
                               value={editVal}
@@ -191,13 +201,13 @@ export default function CsvViewer() {
                               onKeyDown={e => {
                                 if (e.key === 'Enter') commitEdit()
                                 if (e.key === 'Tab') { e.preventDefault(); commitAndMove(!e.shiftKey) }
-
                                 if (e.key === 'Escape') { e.preventDefault(); cancelEdit() }
                               }}
                               style={{
-                                flex: 1, minWidth: 0,
+                                position: 'absolute', inset: 0, width: '100%', height: '100%',
+                                boxSizing: 'border-box', zIndex: 2,
                                 border: '1px solid var(--accent)', borderRadius: '3px',
-                                padding: '2px 6px', background: 'var(--accent-light)',
+                                padding: '0 11px', background: 'var(--accent-light)',
                                 fontSize: '13px', fontFamily: 'var(--font-ui)',
                                 outline: 'none', color: 'var(--text)',
                               }}
@@ -207,21 +217,20 @@ export default function CsvViewer() {
                               onMouseDown={e => { e.preventDefault(); cancelEdit() }}
                               title="Cancelar (Esc)"
                               style={{
-                                flexShrink: 0, fontSize: '11px', lineHeight: 1,
+                                position: 'absolute', left: '100%', top: '50%',
+                                transform: 'translate(4px, -50%)', zIndex: 3,
+                                fontSize: '11px', lineHeight: 1,
                                 padding: '3px 6px', borderRadius: '3px',
                                 border: '1px solid var(--border)',
                                 color: 'var(--text-muted)', background: 'var(--surface)',
-                                cursor: 'pointer',
+                                cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
                               }}
                             >✕</button>
-                          </div>
-                        ) : (
-                          <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {row[h] ?? ''}
-                          </span>
+                          </>
                         )}
                       </td>
-                    ))}
+                      )
+                    })}
                     <td style={{ ...tdStyle, textAlign: 'center' }}>
                       <button
                         onClick={() => deleteRow(dataIdx)}

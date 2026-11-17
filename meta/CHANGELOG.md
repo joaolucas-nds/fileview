@@ -10,6 +10,14 @@
 
 ---
 
+## [0.1.9] — 2026-11-17
+### Corrigido
+- **JSON — edição que não serve ao tipo não grava mais (FIX-004):** «abc» num número virava `null` (e o campo nunca mais voltava a ser número), vazio virava `0`. Agora o campo fica aberto com borda vermelha e o motivo ao passar o mouse; Esc cancela. `true`/`false` aceitam maiúsculas. Um `null` passa a aceitar qualquer valor (número, true/false ou texto).
+- **JSON — chave com ponto no nome** (ex.: `"config.tema"`) **passa a ser editável (FIX-004):** antes a edição sumia sem aviso.
+- **CSV — abrir uma célula não rearranja mais a tabela na horizontal (FIX-005):** o campo de edição fica por cima da célula, com a mesma largura, e o ✕ de cancelar ao lado.
+
+---
+
 ## [0.1.8] — 2026-11-11
 ### Modificado
 - **PDF no visualizador nativo do navegador (DEC-012):** o PDF abre dentro da aba do FileView num `<iframe>`, com o visualizador do próprio navegador — zoom (inclusive Ctrl+roda), busca, seleção de texto, impressão e miniaturas.
