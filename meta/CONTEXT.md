@@ -4,7 +4,7 @@
 > Muda só em alteração estrutural (stack, arquitetura, nova armadilha descoberta).
 > Revisão base de 2026-07-03, atualizada em 2026-11-07 (edição inline do JsonViewer, Tab do CsvViewer) e em 2026-11-10 (migração ASU → Code, DEC-011). Escrita com detalhe máximo propositalmente — é o handoff para uma conversa nova sem histórico.
 
-> **Mudanças nesta revisão (2026-11-10):** (1) árvore do projeto atualizada — entram `CLAUDE.md`, `INSTRUCOES-DO-PROJETO.md`, `.claude/`, `.flatdropignore`, `meta/SPEC.md`, `meta/workorders/`; saem `meta/ASU/` (movido para fora do repo) e `meta/HISTORICO.md` (já apagado); (2) a seção «Sobre o sistema de documentação» foi reescrita para o modo Code; (3) as sub-armadilhas do ASU saíram daqui para HISTORY.md §5 (o ASU foi desligado, o conhecimento fica como histórico); (4) **«📁 Arquivos Críticos» veio do STATUS para cá** — é conhecimento estável, e o template do kit o põe no CONTEXT; (5) «sessão» → «conversa/dia» onde a frase manda fazer algo. **2026-11-11 (DEC-012):** PDF passa a abrir no visualizador nativo do navegador, num `<iframe>`; `pdfjs-dist` sai da stack (linha da tabela, árvore e armadilha #1 ajustadas).
+> **Mudanças nesta revisão (2026-11-10):** (1) árvore do projeto atualizada — entram `CLAUDE.md`, `INSTRUCOES-DO-PROJETO.md`, `.claude/`, `.flatdropignore`, `meta/SPEC.md`, `meta/workorders/`; saem `meta/ASU/` (movido para fora do repo) e `meta/HISTORICO.md` (já apagado); (2) a seção «Sobre o sistema de documentação» foi reescrita para o modo Code; (3) as sub-armadilhas do ASU saíram daqui para HISTORY.md §5 (o ASU foi desligado, o conhecimento fica como histórico); (4) **«📁 Arquivos Críticos» veio do STATUS para cá** — é conhecimento estável, e o template do kit o põe no CONTEXT; (5) «sessão» → «conversa/dia» onde a frase manda fazer algo. **2026-11-11 (DEC-012):** PDF passa a abrir no visualizador nativo do navegador, num `<iframe>`; `pdfjs-dist` sai da stack (linha da tabela, árvore e armadilha #1 ajustadas). **2026-11-21 (merge do KCM v1.160.1):** nova seção «Build e validação (a rede deste projeto)»; a árvore ganha `LICENSE`, `meta/GUIA-DO-KIT.md`, `meta/SETUP.md` e `meta/analises/`.
 
 ---
 
@@ -32,6 +32,12 @@ O projeto nasceu de uma análise de viabilidade (2026-05, ver HISTORY.md seção
 
 `devDependencies`: `@vitejs/plugin-react` ^4.3.1, `vite` ^5.4.10.
 
+## Build e validação (a rede deste projeto)
+- **Rede automática:** `npm run build` (Vite) — devolve código de saída; é a única. **Suíte de testes: nenhuma ainda.**
+- **Linha de base:** nenhuma.
+- **Na tela, pelo dono:** o roteiro que o chat entrega junto de cada WO de código — cada item diz o que se vê quando está certo. Arquivos de teste prontos em `../261112-roteiro-teste/` (fora do repo).
+- **O que o ambiente do chat não roda:** a interface (navegador) e o `npm run build` do repo (o `node_modules` é do Windows). No lugar: o chat simula a WO numa cópia a partir do texto dela, confere a sintaxe JSX com um esbuild instalado na VM e roda a lógica pura em node; o build de verdade é do Code.
+
 ## Estrutura do Projeto (árvore real e completa)
 
 ```
@@ -41,6 +47,7 @@ fileview/
 ├── vite.config.js              # base: './' obrigatório para GitHub Pages — DEC-007
 ├── index.html                  # <div id="root"> + <script src="/src/main.jsx">
 ├── README.md
+├── LICENSE                     # MIT (2026-11-21)
 ├── .gitignore
 ├── .flatdropignore             # canal de reserva (FlatDrop): o que NÃO sobe ao Projeto do Claude
 ├── CLAUDE.md                   # guia raiz do Claude Code (build, convenções, push, relatório)
@@ -62,6 +69,9 @@ fileview/
 │   ├── GLOSSARY.md                     # termos do projeto
 │   ├── HISTORY.md                       # conhecimento consolidado — renomeado de HISTORICO.md em 2026-07-03
 │   ├── LOG-TEMPLATE.md                  # molde do log do dia (referência fixa)
+│   ├── GUIA-DO-KIT.md                   # referência do kit (do KCM, substituído inteiro a cada update)
+│   ├── SETUP.md                         # ambiente para o humano: instalar, rodar, o que já deu errado
+│   ├── analises/                        # análises AAMMDD-ANALISE-<tema>.md (+ _TEMPLATE.md)
 │   ├── SPEC.md                            # modelo de spec de feature (o QUÊ); specs reais nascem em specs/ sob demanda
 │   └── workorders/                        # WOs AAMMDD-woNNNN-desc.md (o chat autora, o Code aplica)
 │       └── _TEMPLATE.md                   # modelo de WO

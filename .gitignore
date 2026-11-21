@@ -10,6 +10,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# o Claude Code cria e enche de caminhos desta maquina; e do usuario, nao do projeto (KCM v1.160.1)
+.claude/settings.local.json
+
 # --- abaixo: boilerplate herdado (mantido; as linhas de Next.js nao se aplicam a este projeto, mas sao inofensivas) ---
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 

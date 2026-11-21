@@ -14,6 +14,7 @@ Confirme em uma frase o que entendeu da tarefa antes de executar. Se houver ambi
 **Arquivo não lido não se deduz — leia do disco; o Code mede o que roda.**
 **WO nunca vai sozinha:** `/apply-wo <arquivo>` em bloco cercado; roteiro do dono, se houver, no chat.
 **Commit:** havendo WO, o bloco de commit é dela; sem WO, ENTREGUE o `git commit` pronto, em bloco SEPARADO, mensagem sem acento. Bloco git parcial (só `add`) não serve: os três em ordem, ou só o `commit`.
+**Entregáveis de repo (sem eu pedir):** `.gitignore` do stack na PRIMEIRA leva com estrutura; `README.md` quando ela estabilizar — se for cedo, DIGA e por quê. Detalhe no CEREBRO.
 **Deploy:** push na `main` publica no GitHub Pages — build vermelho não sobe.
 **Feedback Kit:** desvio do template ou limitação da ferramenta nesta conversa → registre em «Feedback para o Kit» no IDEAS antes de fechar.
 
@@ -23,11 +24,11 @@ Princípios universais (definição completa no CEREBRO.md): analisa antes de ac
 - **Preserva comentários e código existente.** Ao editar, mantém comentários válidos e só remove os órfãos.
 - **Vai à causa raiz, não ao sintoma.** Diante de um bug, investiga a causa antes de propor correção.
 - **Mudança mínima que resolve.** Prefere o diff menor que resolve o problema ao refactor grande não pedido.
-- **Sinaliza o que testar.** Sem suíte: o build valida, a tela é do dono — roteiro com o que se vê quando está certo.
+- **Sinaliza o que testar.** Aponta o que testar após a mudança (borda, regressão) e qual teste falta. Aqui sem suíte: o build valida, a tela é do dono — roteiro com o que se vê quando está certo.
 - **Indica o que merece print no README.** Aponta o que vale print no README; não gera a imagem.
 
 ## Convenções
-- Nomes de arquivos, funções e variáveis em inglês; comentários em PT-BR.
+- Nomes de arquivos, funções e variáveis em inglês; comentários em PT-BR (a menos que o projeto seja em outro idioma).
 - Mensagens de commit em PT-BR, no imperativo curto.
 - Estilo de código: legibilidade primeiro, performance só se medido.
 
@@ -40,9 +41,10 @@ Princípios universais (definição completa no CEREBRO.md): analisa antes de ac
 - **CHANGELOG.md** — Versões entregues (SemVer). Cresce no topo.
 - **IDEAS.md** — Segundo cérebro: ideia muda, não some.
 - **LOG-TEMPLATE.md** — Modelo do log do dia; nunca substituído.
-- **ROADMAP.md** — Plano de evolução em fases.
-- **GLOSSARY.md** — Jargão que se repete no projeto.
-- **HISTORY.md** — Fases antigas; lido sob demanda.
+- **ROADMAP.md** — OPCIONAL — plano de evolução em fases.
+- **GLOSSARY.md** — OPCIONAL — jargão que se repete no projeto.
+- **SETUP.md** — OPCIONAL — ambiente, para o humano.
+- **HISTORY.md** — OPCIONAL — fases antigas e pesquisa.
 - **workorders/** — WOs `AAMMDD-woNNNN-desc.md` (modelo em `_TEMPLATE.md`).
 - Logs detalhados do dia vivem em `logs/` e são lidos sob demanda.
 
@@ -52,8 +54,9 @@ Registre AQUI, não liste para depois: doc grande por WO (com a linha `/apply-wo
 - CHANGELOG.md — completo, com nova entrada se algo foi concluído
 - DECISIONS.md — completo, com nova DEC/FIX se houve decisão ou bug grave
 - IDEAS.md — completo, com as ideias da conversa capturadas e reclassificadas
-- ROADMAP.md — completo, se alguma fase mudou de estado
-- GLOSSARY.md — completo, se surgiu termo novo
+- ROADMAP.md — completo, se alguma fase mudou de estado (quando o projeto usa roadmap)
+- GLOSSARY.md — completo, se surgiu termo novo (quando o projeto usa glossário)
+- SETUP.md — completo, se um passo de ambiente mudou ou um bloqueio foi resolvido (quando usa o arquivo)
 - logs/AAAA-MM-DD.md — log do dia preenchido (formato em LOG-TEMPLATE.md)
 - Higiene no CEREBRO.md (resumo: STATUS só o agora; IDEAS nunca perde; uma fonte de verdade por dado).
 - **Fecho do turno** — formato fixo (divisor, listas, condição por linha) que não cabe aqui: **copie o esqueleto do CEREBRO**, não reconstitua de memória — o esqueleto tem cinco itens; sem saber nomeá-los, abra-o. `Estado` abre com `Base:` — o lido NESTE turno.

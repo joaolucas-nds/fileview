@@ -6,7 +6,7 @@
 ---
 
 ## Versão Atual
-**[0.1.10]** — 2026-11-17 — Fase 1 da grade (DEC-013): fechar com alteração não salva pergunta; CSV com lixeira + Desfazer, «+ Linha» visível com filtro, 3º clique tira a ordenação; CSV e JSON regravam no formato do arquivo (fim de linha, recuo, quebra final). Build verde; **conferência na tela pendente** (roteiro do dono, conversa de 2026-11-17).
+**[0.1.10]** — 2026-11-17 — Fase 1 da grade (DEC-013): fechar com alteração não salva pergunta; CSV com lixeira + Desfazer, «+ Linha» visível com filtro, 3º clique tira a ordenação; CSV e JSON regravam no formato do arquivo (fim de linha, recuo, quebra final). Build verde; **conferido na tela pelo dono em 2026-11-20: 7/7 ok.**
 **[0.1.9]** — 2026-11-17 — JSON: edição que não serve ao tipo não grava mais (era `null`/`0` em silêncio) e chave com ponto passa a ser editável (FIX-004); CSV: abrir uma célula não rearranja mais a tabela (FIX-005). Build verde; **conferido na tela pelo dono em 2026-11-17: 13/13 ok.**
 **[0.1.8]** — 2026-11-11 — PDF no visualizador nativo do navegador (`<iframe>`), sem `pdfjs-dist` (DEC-012). Build verde; **conferido na tela pelo dono em 2026-11-12: 6/6 ok.**
 **[0.1.7]** — 2026-11-11 — Abas: cada arquivo aberto tem rolagem e estado de UI próprios (FIX-003). **Conferido na tela pelo dono: 6/6 ok.**

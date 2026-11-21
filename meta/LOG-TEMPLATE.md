@@ -14,6 +14,9 @@
 ## Feito
 - [Mudanças concretas: arquivos tocados, funções criadas, bugs resolvidos.]
 
+## Entregas
+- [WOs aplicadas (com o commit), specs e análises escritas no dia — o que outro turno vai procurar pelo nome.]
+
 ## Decisões
 - [Decisões tomadas → quais viraram DEC-N em DECISIONS.md.]
 
