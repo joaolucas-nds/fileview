@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 
 const AppContext = createContext(null)
 
@@ -6,6 +6,18 @@ export function AppProvider({ children }) {
   const [files, setFiles] = useState([])
   const [activeId, setActiveId] = useState(null)
   const [modes, setModes] = useState({})
+
+  // Desfazer por arquivo (spec 261123, fase 2a). A pilha guarda CONTEUDOS
+  // inteiros: toda edicao passa por updateContent, entao o mesmo mecanismo cobre
+  // CSV, JSON e Texto sem cada viewer saber de desfazer. Fica num ref (nao em
+  // estado) para updateContent ler e gravar sem depender da renderizacao;
+  // histVersion so existe para os botoes ↶ ↷ re-renderizarem.
+  const HISTORY_LIMIT = 50 // passos por arquivo — cada passo e o arquivo inteiro
+  const COALESCE_MS = 800 // digitacao continua (Texto, Markdown) vira um passo so
+  const filesRef = useRef(files)
+  filesRef.current = files
+  const histRef = useRef({}) // id -> { past: [], future: [], lastAt: 0 }
+  const [histVersion, setHistVersion] = useState(0)
 
   // Fechar ou recarregar a aba do navegador com alteracao nao salva: o navegador
   // mostra o aviso padrao dele (o texto e do navegador, nao nosso). Analise
@@ -75,14 +87,51 @@ export function AppProvider({ children }) {
       })
       return next
     })
+    delete histRef.current[id]
     setModes(prev => { const n = { ...prev }; delete n[id]; return n })
   }, [files])
 
-  const updateContent = useCallback((id, newContent) => {
+  // `opts.coalesce`: quem grava tecla a tecla (SourceEditor, MarkdownEditor)
+  // pede para juntar a digitacao — o estado anterior so entra na pilha se a
+  // ultima gravacao foi ha mais de COALESCE_MS. Edicao discreta (celula, campo)
+  // vira sempre um passo proprio.
+  const updateContent = useCallback((id, newContent, opts = {}) => {
+    const cur = filesRef.current.find(f => f.id === id)
+    if (!cur || cur.content === newContent) return
+    const h = histRef.current[id] || (histRef.current[id] = { past: [], future: [], lastAt: 0 })
+    const now = Date.now()
+    if (!opts.coalesce || now - h.lastAt > COALESCE_MS) {
+      h.past.push(cur.content)
+      if (h.past.length > HISTORY_LIMIT) h.past.shift()
+    }
+    h.lastAt = opts.coalesce ? now : 0
+    h.future = []
+    filesRef.current = filesRef.current.map(f => f.id === id ? { ...f, content: newContent } : f)
     setFiles(prev => prev.map(f =>
       f.id === id ? { ...f, content: newContent, isDirty: newContent !== f.originalContent } : f
     ))
+    setHistVersion(v => v + 1)
   }, [])
+
+  // Desfazer/refazer: troca o conteudo pelo da pilha. isDirty sai da
+  // comparacao com o original, entao desfazer ate a abertura apaga o ●.
+  const stepHistory = useCallback((id, from, to) => {
+    const h = histRef.current[id]
+    const cur = filesRef.current.find(f => f.id === id)
+    if (!h || !cur || h[from].length === 0) return
+    const content = h[from].pop()
+    h[to].push(cur.content)
+    h.lastAt = 0
+    filesRef.current = filesRef.current.map(f => f.id === id ? { ...f, content } : f)
+    setFiles(prev => prev.map(f =>
+      f.id === id ? { ...f, content, isDirty: content !== f.originalContent } : f
+    ))
+    setHistVersion(v => v + 1)
+  }, [])
+  const undo = useCallback((id) => stepHistory(id, 'past', 'future'), [stepHistory])
+  const redo = useCallback((id) => stepHistory(id, 'future', 'past'), [stepHistory])
+  const canUndo = (id) => (histRef.current[id]?.past.length || 0) > 0
+  const canRedo = (id) => (histRef.current[id]?.future.length || 0) > 0
 
   const setMode = useCallback((id, mode) => {
     setModes(prev => ({ ...prev, [id]: mode }))
@@ -108,6 +157,7 @@ export function AppProvider({ children }) {
     <AppContext.Provider value={{
       files, activeId, activeFile, activeMode,
       openFile, closeFile, updateContent, setMode, saveFile, setActiveId,
+      undo, redo, canUndo, canRedo, histVersion,
     }}>
       {children}
     </AppContext.Provider>

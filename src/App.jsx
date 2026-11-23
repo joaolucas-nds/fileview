@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { Undo2, Redo2 } from 'lucide-react'
 import { AppProvider, useApp } from './context/AppContext'
 import Sidebar from './components/Sidebar'
 import ViewerRouter from './components/ViewerRouter'
@@ -53,7 +54,33 @@ function FileTab({ file }) {
 }
 
 function Inner() {
-  const { files, activeFile, activeMode, setMode, saveFile, openFile } = useApp()
+  const { files, activeFile, activeMode, setMode, saveFile, openFile, undo, redo, canUndo, canRedo } = useApp()
+
+  // Desfazer do ARQUIVO (spec 261123, fase 2a). Fora no Markdown em modo
+  // Editar: o Tiptap tem desfazer proprio e so rele o conteudo ao trocar de
+  // arquivo — um desfazer de fora o deixaria dessincronizado.
+  const historyOn = !!activeFile && activeFile.ext !== 'pdf' && !(activeFile.ext === 'md' && activeMode === 'edit')
+
+  // Ctrl+Z desfaz, Ctrl+Y ou Ctrl+Shift+Z refaz — so quando o foco NAO esta
+  // num campo de texto (celula em edicao, textarea, editor): ali vale o
+  // desfazer do proprio campo.
+  useEffect(() => {
+    if (!historyOn) return
+    const onKey = (e) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return
+      const k = e.key.toLowerCase()
+      const isUndo = k === 'z' && !e.shiftKey
+      const isRedo = (k === 'z' && e.shiftKey) || k === 'y'
+      if (!isUndo && !isRedo) return
+      const t = e.target
+      if (t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))) return
+      e.preventDefault()
+      if (isUndo) undo(activeFile.id)
+      else redo(activeFile.id)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [historyOn, activeFile, undo, redo])
 
   const handleDrop = (e) => {
     e.preventDefault()
@@ -112,6 +139,18 @@ function Inner() {
                     active={activeMode === m.key}
                     onClick={() => setMode(activeFile.id, m.key)} />
                 ))}
+                {historyOn && (
+                  <>
+                    <button onClick={() => undo(activeFile.id)} disabled={!canUndo(activeFile.id)}
+                      title="Desfazer (Ctrl+Z)" aria-label="Desfazer" style={histBtn(!canUndo(activeFile.id))}>
+                      <Undo2 size={14} />
+                    </button>
+                    <button onClick={() => redo(activeFile.id)} disabled={!canRedo(activeFile.id)}
+                      title="Refazer (Ctrl+Y)" aria-label="Refazer" style={histBtn(!canRedo(activeFile.id))}>
+                      <Redo2 size={14} />
+                    </button>
+                  </>
+                )}
                 {activeFile.isDirty && (
                   <button
                     onClick={() => saveFile(activeFile.id)}
@@ -135,6 +174,14 @@ function Inner() {
     </div>
   )
 }
+
+// Botao ↶/↷ da barra das abas: apagado quando nao ha o que desfazer/refazer.
+const histBtn = (disabled) => ({
+  display: 'flex', alignItems: 'center', padding: '4px 6px',
+  borderRadius: 'var(--radius-sm)', border: '1px solid transparent',
+  background: 'transparent', color: disabled ? 'var(--text-faint)' : 'var(--text-muted)',
+  cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.45 : 1,
+})
 
 export default function App() {
   return <AppProvider><Inner /></AppProvider>

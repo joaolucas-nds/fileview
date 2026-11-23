@@ -202,7 +202,7 @@ export default function MarkdownEditor() {
     onUpdate: ({ editor }) => {
       if (activeFile) {
         const md = editor.storage.markdown.getMarkdown()
-        updateContent(activeFile.id, md)
+        updateContent(activeFile.id, md, { coalesce: true })
       }
     },
   })

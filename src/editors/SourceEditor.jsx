@@ -30,7 +30,7 @@ export default function SourceEditor() {
       </div>
       <textarea
         value={activeFile.content}
-        onChange={e => updateContent(activeFile.id, e.target.value)}
+        onChange={e => updateContent(activeFile.id, e.target.value, { coalesce: true })}
         spellCheck={false}
         style={{
           flex: 1, border: 'none', outline: 'none', resize: 'none',
