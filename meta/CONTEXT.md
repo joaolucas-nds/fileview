@@ -4,7 +4,7 @@
 > Muda só em alteração estrutural (stack, arquitetura, nova armadilha descoberta).
 > Revisão base de 2026-07-03, atualizada em 2026-11-07 (edição inline do JsonViewer, Tab do CsvViewer) e em 2026-11-10 (migração ASU → Code, DEC-011). Escrita com detalhe máximo propositalmente — é o handoff para uma conversa nova sem histórico.
 
-> **Mudanças nesta revisão (2026-11-10):** (1) árvore do projeto atualizada — entram `CLAUDE.md`, `INSTRUCOES-DO-PROJETO.md`, `.claude/`, `.flatdropignore`, `meta/SPEC.md`, `meta/workorders/`; saem `meta/ASU/` (movido para fora do repo) e `meta/HISTORICO.md` (já apagado); (2) a seção «Sobre o sistema de documentação» foi reescrita para o modo Code; (3) as sub-armadilhas do ASU saíram daqui para HISTORY.md §5 (o ASU foi desligado, o conhecimento fica como histórico); (4) **«📁 Arquivos Críticos» veio do STATUS para cá** — é conhecimento estável, e o template do kit o põe no CONTEXT; (5) «sessão» → «conversa/dia» onde a frase manda fazer algo. **2026-11-11 (DEC-012):** PDF passa a abrir no visualizador nativo do navegador, num `<iframe>`; `pdfjs-dist` sai da stack (linha da tabela, árvore e armadilha #1 ajustadas). **2026-11-21 (merge do KCM v1.160.1):** nova seção «Build e validação (a rede deste projeto)»; a árvore ganha `LICENSE`, `meta/GUIA-DO-KIT.md`, `meta/SETUP.md` e `meta/analises/`.
+> **Mudanças nesta revisão (2026-11-10):** (1) árvore do projeto atualizada — entram `CLAUDE.md`, `INSTRUCOES-DO-PROJETO.md`, `.claude/`, `.flatdropignore`, `meta/SPEC.md`, `meta/workorders/`; saem `meta/ASU/` (movido para fora do repo) e `meta/HISTORICO.md` (já apagado); (2) a seção «Sobre o sistema de documentação» foi reescrita para o modo Code; (3) as sub-armadilhas do ASU saíram daqui para HISTORY.md §5 (o ASU foi desligado, o conhecimento fica como histórico); (4) **«📁 Arquivos Críticos» veio do STATUS para cá** — é conhecimento estável, e o template do kit o põe no CONTEXT; (5) «sessão» → «conversa/dia» onde a frase manda fazer algo. **2026-11-11 (DEC-012):** PDF passa a abrir no visualizador nativo do navegador, num `<iframe>`; `pdfjs-dist` sai da stack (linha da tabela, árvore e armadilha #1 ajustadas). **2026-11-21 (merge do KCM v1.160.1):** nova seção «Build e validação (a rede deste projeto)»; a árvore ganha `LICENSE`, `meta/GUIA-DO-KIT.md`, `meta/SETUP.md` e `meta/analises/`. **2026-11-25 (fase 2b):** CSV passa a usar o `DataGrid` (seção «Como o CsvViewer e o DataGrid funcionam» reescrita); stack ganha `@tanstack/react-table`; árvore e Arquivos Críticos com o `DataGrid.jsx`.
 
 ---
 
@@ -25,6 +25,7 @@ O projeto nasceu de uma análise de viabilidade (2026-05, ver HISTORY.md seção
 | Renderização MD (view-only) | `marked` | ^13.0.3 | GFM ativado |
 | PDF | visualizador nativo do navegador (`<iframe>` com a Blob URL) | — | Desde 0.1.8 (DEC-012): zoom, busca, seleção de texto e impressão vêm do navegador. Até 0.1.7 era `pdfjs-dist` desenhando em canvas. Só leitura, DEC-004 |
 | CSV | `papaparse` | ^5.4.1 | Parser mais robusto do JS, zero dependências |
+| Tabela (lógica) | `@tanstack/react-table` | 8.21.3 | Headless: ordenar, filtrar (e, nas fases 3–4, facetas e agrupar); o visual é nosso — DEC-013 |
 | Syntax highlight | `lowlight` | (via Tiptap) | Dentro dos code blocks do editor MD |
 | Ícones | `lucide-react` | ^0.462.0 **fixado** | Versões novas renomeiam ícones — armadilha #4 |
 | Fontes | Outfit (UI) + Space Mono (código) | via Google Fonts | — |
@@ -92,12 +93,13 @@ fileview/
     │   └── AppContext.jsx             # PEÇA CRÍTICA — única fonte de verdade do estado (ver seção dedicada abaixo)
     ├── components/
     │   ├── Sidebar.jsx                  # lista de arquivos abertos, botão abrir, drop hint lateral, indicador dirty
+    │   ├── DataGrid.jsx                  # grade compartilhada (TanStack Table v8): ordenar, filtrar, seleção por teclado, edição por cima da célula
     │   ├── DropZone.jsx                  # tela de boas-vindas quando nenhum arquivo está aberto (drag-and-drop + click)
     │   └── ViewerRouter.jsx               # decide viewer/editor por `ext` + `mode`, via React.lazy + Suspense
     ├── viewers/
     │   ├── MarkdownViewer.jsx              # marked → dangerouslySetInnerHTML numa div .md-output; read-only
     │   ├── JsonViewer.jsx                    # O ARQUIVO MAIS COMPLEXO do projeto — árvore + FormView completo (ver seção dedicada)
-    │   ├── CsvViewer.jsx                       # tabela Papa Parse: sort, filter, edit inline (__dataIdx), add/delete row, botão cancelar
+    │   ├── CsvViewer.jsx                       # CSV: parse/serialize no formato original, barra (filtro, + Linha, Desfazer); a tabela é o DataGrid
     │   └── PdfViewer.jsx                         # <iframe> com a Blob URL — o navegador renderiza (DEC-012); sem biblioteca de PDF
     └── editors/
         ├── MarkdownEditor.jsx                    # Tiptap WYSIWYG completo: toolbar + BubbleMenu flutuante
@@ -174,14 +176,15 @@ Transforma o JSON num formulário visual. Pipeline:
    - **`ROW_CLICK_DELAY = 220` ms (DEC-010):** clique simples numa linha abre o modal com atraso (`scheduleOpenModal` → `setTimeout`) para um duplo clique numa célula poder cancelar a abertura (`startCellEdit` faz `clearTimeout` + `stopPropagation`) — o DOM dispara `click` duas vezes antes do `dblclick`. Alternativa descartada por ora: ícone dedicado para abrir o modal.
    - `PrimitiveList` (chips de arrays de primitivos) continua SOMENTE LEITURA — ver IDEAS.
 
-## Como o CsvViewer funciona
+## Como o CsvViewer e o DataGrid funcionam (desde 0.1.12, fase 2b)
 
-- `Papa.parse(content, { header: true, skipEmptyLines: true })` → `{ data, headers }`.
-- `filtered` é um `useMemo` que **injeta `__dataIdx`** (o índice da linha no `data` original) em cada linha antes de filtrar/ordenar. Isso é o que resolve o FIX-002: editar uma célula enquanto o filtro está ativo precisa saber qual linha do array ORIGINAL corrigir, não a posição visível pós-filtro.
-- Edição: duplo clique numa célula → `startEdit(dataIdx, colIdx, val)` → mostra `<input>` + botão `✕` visível ao lado (não só ícone escondido). `commitEdit()` reconstrói `data` inteiro via `.map` trocando só a linha de `dataIdx`, chama `Papa.unparse` e `updateContent`. `cancelEdit()` só fecha o input sem salvar.
-- **Armadilha #5 aplicada aqui**: o botão cancelar usa `onMouseDown={e => { e.preventDefault(); cancelEdit() }}` em vez de `onClick` — porque `onBlur` do input dispara ANTES de qualquer `onClick` de um elemento vizinho, então um botão cancelar com `onClick` normal NUNCA seria alcançado (o `onBlur` já teria comitado a edição). `preventDefault()` no `mousedown` impede o input de perder o foco a tempo do `onBlur` disparar.
-- Botão "✕ limpar" ao lado do campo de busca limpa o filtro com um clique.
-- **Navegação por Tab (0.1.6):** `commitEdit` foi dividida — `commitValue(dataIdx, col, val)` só grava (`data.map` + `Papa.unparse` + `updateContent`); `commitEdit` = `commitValue` + fecha; `commitAndMove(forward)` = `commitValue` + abre a próxima célula via `startEdit`, sem passar pelo estado `null` intermediário. Tab/Shift+Tab no `onKeyDown` do input. A navegação percorre `filtered` (ordem VISÍVEL — filtro/ordenação atuais): acha a linha atual por `__dataIdx`, calcula a próxima (coluna ±1; passando da borda de coluna, pula para a linha seguinte/anterior) e reabre usando o `__dataIdx` da linha de destino. Nas bordas da tabela só fecha a edição — NÃO cria linha nova (possível extensão, ver IDEAS). Resíduo cosmético: linha em branco dentro do `onKeyDown`, entre os handlers de Tab e Escape.
+- **`CsvViewer.jsx`** cuida do que é do CSV: `Papa.parse(content, { header: true, skipEmptyLines: true })` → `{ data, headers }`; `serialize` regrava no formato original (fim de linha, quebra final, ordem das colunas — DEC-013); a barra (filtro, contagem, «+ Linha») e o «Desfazer» da exclusão. A tabela em si é o `DataGrid`.
+- **`src/components/DataGrid.jsx`** é a grade compartilhada (a 2c a leva ao `ArrayTable` do JSON). Ordenar e filtrar vêm do **TanStack Table v8** (`getSortedRowModel`, `getFilteredRowModel`); visual e teclado são nossos.
+- **Identidade da linha = índice no `data` original** (`getRowId: (_, index) => String(index)`). Toda edição volta por `onCommit(índiceOriginal, coluna, valor)` — a regra do FIX-002, sem o antigo `__dataIdx`.
+- **Seleção e edição guardam a identidade da célula** (`{ rowId, col }`), não a posição: ordenar ou filtrar não troca a célula selecionada. Teclado com a grade em foco: setas movem (ordem visível), Enter/F2 editam, tecla imprimível começa a editar substituindo, Delete limpa, Tab avança, Esc tira a seleção. No campo: Enter grava e desce, Tab grava e abre a próxima (na borda, fecha), Esc cancela, sair do campo grava. Ctrl+Z/Ctrl+Y não são tratados pela grade: seguem para o desfazer do arquivo (fase 2a).
+- **Largura das colunas medida uma vez na abertura** (cabeçalho + até 200 linhas, piso 64 px, teto 320 px) e fixa depois, com `table-layout: fixed` + `<colgroup>`. O campo de edição vai por cima da célula e o ✕ fica fora (FIX-005; armadilha #5: o ✕ usa `onMouseDown` + `preventDefault`).
+- **Ordenação:** as duas células numéricas → por número; senão, por texto; vazio NÃO vale 0. Clique no cabeçalho: crescente → decrescente → sem ordem.
+- **Sem virtualização ainda:** todas as linhas visíveis vão para o DOM. CSV muito grande pode ficar lento — medir com `../261112-roteiro-teste/teste-50k.csv` antes da fase 3 (spec 261123).
 
 ## Como o MarkdownEditor funciona
 
@@ -232,7 +235,8 @@ O ASU (patches `.yaml`) foi usado de 2026-06-27 a 2026-11-07 e está desligado; 
 - `src/editors/MarkdownEditor.jsx` — configuração Tiptap; `StarterKit.configure({ codeBlock: false })` obrigatório.
 - `src/App.css` — todas as CSS vars e classes `.md-output`/`.tiptap-editor`; mudança reflete em tudo.
 - `src/viewers/JsonViewer.jsx` — Árvore + FormView (Cards/Tabs/Painel) + ArrayTable (paginação+modal, ambos editáveis desde 0.1.5) + edição inline do Field. `parseSections`/`SectionContent` compartilhados pelos 3 layouts; `handleUpdate` (no componente principal) é a mesma função usada por TODOS os pontos de edição (Árvore, Field, células do ArrayTable, RowDetailModal) — path dotted, incluindo índice de array quando aplicável. `ROWS_PER_PAGE = 20` controla a paginação; `ROW_CLICK_DELAY = 220` (ms) resolve o conflito clique-abre-modal vs duplo-clique-edita-célula (ver DEC-010).
-- `src/viewers/CsvViewer.jsx` — `commitValue` extraída de `commitEdit` (0.1.6) para ser reaproveitada por `commitAndMove`, que resolve a navegação por Tab; navega sobre `filtered` (ordem visível), não sobre `data` cru — mesmo cuidado do FIX-002 aplicado à navegação, não só à gravação.
+- `src/components/DataGrid.jsx` — grade compartilhada (DEC-013). A edição volta pelo índice ORIGINAL da linha (FIX-002); a largura das colunas é fixa depois da abertura (FIX-005); Ctrl+Z não é tratado aqui (é do arquivo). Mexer aqui afeta o CSV e, a partir da 2c, o JSON.
+- `src/viewers/CsvViewer.jsx` — `serialize` preserva o formato do arquivo (DEC-013); `commitValue` grava no `data` cru pelo índice original.
 - `vite.config.js` — `base: './'` obrigatório para GitHub Pages; não remover.
 - `.github/workflows/deploy.yml` — pipeline de deploy automático; node-version 24; não remover. Push na `main` = produção.
 - `meta/CEREBRO.md` — regras de comportamento; qualquer atualização do kit deve ser mesclada aqui, não sobrescrita.

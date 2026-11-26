@@ -1,7 +1,8 @@
 # SPEC — Fase 2 da grade de dados: desfazer por arquivo + `DataGrid` compartilhado (CSV e arrays do JSON)
 
 > **Origem:** DEC-013 e `meta/analises/261117-ANALISE-ux-tabelas-e-json.md` (fase 2). ROADMAP F2b.
-> **Status:** 2a em WO (`wo0008`); 2b e 2c a escrever, cada uma depois da anterior conferida na tela.
+> **Status:** 2a aplicada (`wo0008`, `5eecf73`) e conferida na tela 7/7 em 2026-11-25 — versão 0.1.11; 2b em WO (`wo0009`, versão 0.1.12); 2c a escrever.
+> **Decidido na 2b (2026-11-25):** no campo de edição, Enter grava e DESCE uma linha (convenção de planilha; antes ficava na mesma célula); a barra «Desfazer» da exclusão fica, ao lado do Ctrl+Z; sem virtualização por enquanto — medir com `../261112-roteiro-teste/teste-50k.csv`.
 
 ## Problema
 O FileView tem duas tabelas escritas à parte (`CsvViewer` e o `ArrayTable` do `JsonViewer`), com geometria instável (a largura da coluna depende do conteúdo), sem célula selecionada (só duplo clique, nada de setas) e sem desfazer além da exclusão de linha do CSV. As fases 3–5 (filtro por coluna, agrupar, cards) precisam de UMA grade por baixo, senão cada recurso é escrito duas vezes.

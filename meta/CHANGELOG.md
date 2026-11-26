@@ -10,6 +10,22 @@
 
 ---
 
+## [0.1.12] — 2026-11-25
+### Adicionado
+- **CSV — célula selecionada e teclado:** clique seleciona; setas movem; Enter, F2 ou digitar começa a editar (digitar substitui o valor); no campo, Enter grava e desce uma linha, Tab grava e avança, Esc cancela; Delete limpa a célula.
+
+### Modificado
+- **CSV — grade nova (`DataGrid`, TanStack Table v8):** a largura das colunas é medida na abertura e não muda mais ao editar, filtrar ou ordenar.
+- **CSV — ordenação:** célula vazia não vale mais 0 (antes se misturava aos números).
+
+---
+
+## [0.1.11] — 2026-11-23
+### Adicionado
+- **Desfazer e refazer por arquivo:** Ctrl+Z e Ctrl+Y (ou Ctrl+Shift+Z) e botões ↶ ↷ na barra das abas, até 50 passos por arquivo. A digitação no modo Texto vira um passo só. Com um campo em edição, vale o desfazer do campo; no Markdown em modo Editar, o do editor.
+
+---
+
 ## [0.1.10] — 2026-11-17
 ### Adicionado
 - **Fechar com alteração não salva pergunta antes:** o ✕ da aba e o da barra lateral pedem confirmação; fechar ou recarregar a aba do navegador mostra o aviso do navegador.

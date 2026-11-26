@@ -37,8 +37,8 @@
 ## 🟡 F2b — Grade de dados *(em curso — DEC-013)*
 **Objetivo:** uma grade compartilhada pelo CSV e pelos arrays de objetos do JSON, com o que a Mapoteca ensina (filtro por coluna, ordenar em níveis, agrupar) e uma vista de cards.
 **Critério de conclusão:** as cinco fases conferidas na tela pelo dono.
-- [ ] Fase 1 — segurança: confirmar ao fechar com alteração, lixeira + Desfazer no CSV, «+ Linha» com filtro, 3º clique tira a ordem, formato do arquivo preservado (wo0006)
-- [ ] Fase 2 — base: `DataGrid` sobre TanStack Table v8, largura de coluna estável, célula selecionada com teclado, desfazer por arquivo
+- [x] Fase 1 — segurança: confirmar ao fechar com alteração, lixeira + Desfazer no CSV, «+ Linha» com filtro, 3º clique tira a ordem, formato do arquivo preservado (wo0006) — 0.1.10, conferida 7/7.
+- [ ] Fase 2 — base: `DataGrid` sobre TanStack Table v8, largura de coluna estável, célula selecionada com teclado, desfazer por arquivo — 2a (desfazer) 0.1.11 conferida; 2b (DataGrid no CSV) 0.1.12; falta 2c (ArrayTable no DataGrid).
 - [ ] Fase 3 — filtro por coluna com facetas e chips; ordenação em níveis (Shift+clique)
 - [ ] Fase 4 — agrupar (até 3 níveis) com totais
 - [ ] Fase 5 — vista de cards para arrays de objetos do JSON

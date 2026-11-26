@@ -1,16 +1,20 @@
 import { useState, useMemo } from 'react'
 import Papa from 'papaparse'
-import { Trash2 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
+import DataGrid from '../components/DataGrid'
 
+/**
+ * Visualizador/editor de CSV. Desde a fase 2b (spec 261123, DEC-013) a tabela
+ * em si e o DataGrid compartilhado; aqui ficam o que e do CSV: ler e regravar
+ * o arquivo no formato original, a barra (filtro, contagem, «+ Linha») e o
+ * «Desfazer» da exclusao de linha.
+ */
 export default function CsvViewer() {
   const { activeFile, updateContent } = useApp()
-  const [sortCol, setSortCol] = useState(null)
-  const [sortDir, setSortDir] = useState('asc')
   const [search, setSearch] = useState('')
-  // editCell guarda { dataIdx, col } — índice no array DATA original, não no filtered
-  const [editCell, setEditCell] = useState(null)
-  const [editVal, setEditVal] = useState('')
+  const [visibleCount, setVisibleCount] = useState(0)
+  // Pedido para a grade abrir uma celula (o «+ Linha» abre a 1a da linha nova)
+  const [editRequest, setEditRequest] = useState(null)
 
   const { data, headers } = useMemo(() => {
     if (!activeFile?.content) return { data: [], headers: [] }
@@ -18,43 +22,6 @@ export default function CsvViewer() {
     return { data: result.data, headers: result.meta.fields || [] }
   }, [activeFile?.content])
 
-  // filtered injeta __dataIdx para manter referência ao índice original
-  const filtered = useMemo(() => {
-    let rows = data.map((row, i) => ({ ...row, __dataIdx: i }))
-    if (search) {
-      const q = search.toLowerCase()
-      rows = rows.filter(row =>
-        headers.some(h => String(row[h] ?? '').toLowerCase().includes(q))
-      )
-    }
-    if (sortCol !== null) {
-      rows.sort((a, b) => {
-        const av = a[headers[sortCol]] ?? ''
-        const bv = b[headers[sortCol]] ?? ''
-        const an = Number(av), bn = Number(bv)
-        const cmp = !isNaN(an) && !isNaN(bn) ? an - bn : String(av).localeCompare(String(bv))
-        return sortDir === 'asc' ? cmp : -cmp
-      })
-    }
-    return rows
-  }, [data, search, sortCol, sortDir, headers])
-
-  // Clique no cabecalho: crescente → decrescente → sem ordenacao (analise
-  // 261117, U4 — antes nao havia como voltar a ordem do arquivo).
-  const handleSort = (i) => {
-    if (sortCol !== i) { setSortCol(i); setSortDir('asc'); return }
-    if (sortDir === 'asc') { setSortDir('desc'); return }
-    setSortCol(null); setSortDir('asc')
-  }
-
-  const startEdit = (dataIdx, colIdx, val) => {
-    setEditCell({ dataIdx, col: colIdx })
-    setEditVal(val)
-  }
-  // Confirma edicao no data ORIGINAL usando dataIdx (FIX-002). Extraida a
-  // gravacao em si (`commitValue`) para ser reaproveitada tambem pela
-  // navegacao Tab (`commitAndMove`), que precisa commitar E abrir a proxima
-  // celula na mesma chamada, sem passar pelo estado intermediario null.
   // Regrava o CSV no formato do arquivo aberto: mesmo fim de linha (o
   // Papa.unparse usa CRLF por padrao) e a quebra final, se havia. Antes toda
   // edicao num CSV LF reescrevia o arquivo inteiro (analise 261117, decisao 3).
@@ -65,42 +32,12 @@ export default function CsvViewer() {
     return activeFile.content.endsWith('\n') ? out + nl : out
   }
 
+  // A grade devolve o indice ORIGINAL da linha (FIX-002): grava no `data` cru,
+  // seja qual for o filtro ou a ordem na tela.
   const commitValue = (dataIdx, col, val) => {
-    const colName = headers[col]
-    const newData = data.map((r, i) =>
-      i === dataIdx ? { ...r, [colName]: val } : r
-    )
+    const newData = data.map((r, i) => (i === dataIdx ? { ...r, [col]: val } : r))
     updateContent(activeFile.id, serialize(newData))
   }
-
-  const commitEdit = () => {
-    if (!editCell) return
-    commitValue(editCell.dataIdx, editCell.col, editVal)
-    setEditCell(null)
-  }
-
-  // Tab confirma a celula atual e abre a proxima (Shift+Tab volta), navegando
-  // pela ordem VISIVEL (`filtered` - respeitando filtro/ordenacao atuais), nao
-  // pela ordem crua de `data`. Ao passar da ultima coluna, pula para a primeira
-  // coluna da proxima linha (e vice-versa voltando). Nas bordas da tabela
-  // (Tab na ultima celula, ou Shift+Tab na primeira), so fecha a edicao.
-  const commitAndMove = (forward) => {
-    if (!editCell) return
-    commitValue(editCell.dataIdx, editCell.col, editVal)
-    const curIdx = filtered.findIndex(r => r.__dataIdx === editCell.dataIdx)
-    if (curIdx === -1) { setEditCell(null); return }
-    let nextCol = editCell.col + (forward ? 1 : -1)
-    let nextRowIdx = curIdx
-    if (nextCol >= headers.length) { nextCol = 0; nextRowIdx = curIdx + 1 }
-    else if (nextCol < 0) { nextCol = headers.length - 1; nextRowIdx = curIdx - 1 }
-    if (nextRowIdx < 0 || nextRowIdx >= filtered.length) { setEditCell(null); return }
-    const nextRow = filtered[nextRowIdx]
-    startEdit(nextRow.__dataIdx, nextCol, nextRow[headers[nextCol]] ?? '')
-  }
-
-  // onMouseDown + preventDefault dispara ANTES do onBlur do input
-  const cancelEdit = () => setEditCell(null)
-
 
   // + Linha: com filtro ativo a linha nova (vazia) nao passaria no filtro e o
   // botao pareceria nao fazer nada (analise 261117, U11) — limpa o filtro e ja
@@ -109,24 +46,22 @@ export default function CsvViewer() {
     const emptyRow = Object.fromEntries(headers.map(h => [h, '']))
     updateContent(activeFile.id, serialize([...data, emptyRow]))
     setSearch('')
-    if (headers.length) startEdit(data.length, 0, '')
+    if (headers.length) setEditRequest({ rowIdx: data.length, col: headers[0], nonce: Date.now() })
   }
 
-  // Ultima linha excluida, para o «Desfazer» da barra (analise 261117, U2):
-  // excluir e um clique, entao precisa voltar com outro.
+  // Ultima linha excluida, para o «Desfazer» da barra (analise 261117, U2).
+  // O Ctrl+Z do arquivo (fase 2a) tambem desfaz a exclusao.
   const [lastDeleted, setLastDeleted] = useState(null) // { dataIdx, row }
 
   const deleteRow = (dataIdx) => {
     setLastDeleted({ dataIdx, row: data[dataIdx] })
-    const newData = data.filter((_, i) => i !== dataIdx)
-    updateContent(activeFile.id, serialize(newData))
+    updateContent(activeFile.id, serialize(data.filter((_, i) => i !== dataIdx)))
   }
 
   const undoDelete = () => {
     if (!lastDeleted) return
     const { dataIdx, row } = lastDeleted
-    const newData = [...data.slice(0, dataIdx), row, ...data.slice(dataIdx)]
-    updateContent(activeFile.id, serialize(newData))
+    updateContent(activeFile.id, serialize([...data.slice(0, dataIdx), row, ...data.slice(dataIdx)]))
     setLastDeleted(null)
   }
 
@@ -134,7 +69,7 @@ export default function CsvViewer() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Toolbar */}
+      {/* Barra */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: '10px',
         padding: '8px 16px', borderBottom: '1px solid var(--border)',
@@ -159,7 +94,7 @@ export default function CsvViewer() {
           }}>✕ limpar</button>
         )}
         <span style={{ color: 'var(--text-faint)', fontSize: '12px' }}>
-          {filtered.length} / {data.length} linhas · {headers.length} colunas
+          {visibleCount} / {data.length} linhas · {headers.length} colunas
         </span>
         {lastDeleted && (
           <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -182,135 +117,28 @@ export default function CsvViewer() {
         >+ Linha</button>
       </div>
 
-      {/* Tabela */}
-      <div style={{ flex: 1, overflow: 'auto' }}>
-        {headers.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
-            Arquivo CSV vazio ou inválido.
-          </div>
-        ) : (
-          <table style={{ borderCollapse: 'collapse', minWidth: '100%', fontSize: '13px' }}>
-            <thead>
-              <tr style={{ position: 'sticky', top: 0, zIndex: 1 }}>
-                <th style={{ ...thStyle, width: '36px', color: 'var(--text-faint)' }}>#</th>
-                {headers.map((h, i) => (
-                  <th key={i} onClick={() => handleSort(i)}
-                    style={{ ...thStyle, cursor: 'pointer', userSelect: 'none' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      {h}
-                      {sortCol === i && (
-                        <span style={{ fontSize: '10px', color: 'var(--accent)' }}>
-                          {sortDir === 'asc' ? '▲' : '▼'}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                ))}
-                <th style={{ ...thStyle, width: '36px' }} />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((row) => {
-                const dataIdx = row.__dataIdx
-                return (
-                  <tr key={dataIdx} style={{ borderBottom: '1px solid var(--border)' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--gray-light)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <td style={{ ...tdStyle, color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
-                      {dataIdx + 1}
-                    </td>
-                    {headers.map((h, ci) => {
-                      const isEditing = editCell?.dataIdx === dataIdx && editCell?.col === ci
-                      return (
-                      <td key={ci} style={isEditing ? { ...tdStyle, position: 'relative' } : tdStyle}
-                        onDoubleClick={() => startEdit(dataIdx, ci, row[h] ?? '')}>
-                        {/* O texto fica no lugar (invisivel durante a edicao) para a celula
-                            manter a largura: o campo de edicao vai POR CIMA dela e o ✕ fica
-                            fora, a direita. Antes o input entrava no fluxo da tabela, a
-                            coluna mudava de largura e a tabela inteira se rearranjava
-                            na horizontal ao abrir uma celula (FIX-005). */}
-                        <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', visibility: isEditing ? 'hidden' : 'visible' }}>
-                          {row[h] ?? ''}
-                        </span>
-                        {isEditing && (
-                          <>
-                            <input
-                              autoFocus
-                              value={editVal}
-                              onChange={e => setEditVal(e.target.value)}
-                              onBlur={commitEdit}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') commitEdit()
-                                if (e.key === 'Tab') { e.preventDefault(); commitAndMove(!e.shiftKey) }
-                                if (e.key === 'Escape') { e.preventDefault(); cancelEdit() }
-                              }}
-                              style={{
-                                position: 'absolute', inset: 0, width: '100%', height: '100%',
-                                boxSizing: 'border-box', zIndex: 2,
-                                border: '1px solid var(--accent)', borderRadius: '3px',
-                                padding: '0 11px', background: 'var(--accent-light)',
-                                fontSize: '13px', fontFamily: 'var(--font-ui)',
-                                outline: 'none', color: 'var(--text)',
-                              }}
-                            />
-                            {/* onMouseDown+preventDefault dispara antes do onBlur do input */}
-                            <button
-                              onMouseDown={e => { e.preventDefault(); cancelEdit() }}
-                              title="Cancelar (Esc)"
-                              style={{
-                                position: 'absolute', left: '100%', top: '50%',
-                                transform: 'translate(4px, -50%)', zIndex: 3,
-                                fontSize: '11px', lineHeight: 1,
-                                padding: '3px 6px', borderRadius: '3px',
-                                border: '1px solid var(--border)',
-                                color: 'var(--text-muted)', background: 'var(--surface)',
-                                cursor: 'pointer', boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
-                              }}
-                            >✕</button>
-                          </>
-                        )}
-                      </td>
-                      )
-                    })}
-                    <td style={{ ...tdStyle, textAlign: 'center' }}>
-                      <button
-                        onClick={() => deleteRow(dataIdx)}
-                        style={{
-                          fontSize: '11px', color: 'var(--text-faint)', padding: '2px 5px',
-                          borderRadius: '3px', cursor: 'pointer', border: 'none', background: 'transparent',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.color = 'var(--red)'; e.currentTarget.style.background = 'var(--red-light)' }}
-                        onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-faint)'; e.currentTarget.style.background = 'transparent' }}
-                        title="Excluir linha (dá para desfazer na barra de cima)"
-                        aria-label="Excluir linha"
-                      ><Trash2 size={13} /></button>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {headers.length === 0 ? (
+        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+          Arquivo CSV vazio ou inválido.
+        </div>
+      ) : (
+        <DataGrid
+          columns={headers}
+          rows={data}
+          globalFilter={search}
+          onCommit={commitValue}
+          onDeleteRow={deleteRow}
+          editRequest={editRequest}
+          onVisibleCountChange={setVisibleCount}
+        />
+      )}
 
       <div style={{
         padding: '4px 16px', borderTop: '1px solid var(--border)',
         background: 'var(--surface)', fontSize: '11px', color: 'var(--text-faint)', flexShrink: 0,
       }}>
-        Duplo clique numa célula para editar · Tab move entre células (confirma) · Enter confirma · Esc ou ✕ cancela · clique no cabeçalho ordena (3º clique tira a ordem) · lixeira exclui a linha (Desfazer na barra)
+        Clique seleciona · setas movem · Enter, F2 ou digitar edita · Enter confirma e desce · Tab confirma e avança · Esc cancela · Delete limpa · clique no cabeçalho ordena (3º clique tira a ordem) · lixeira exclui (Desfazer na barra ou Ctrl+Z)
       </div>
     </div>
   )
-}
-
-const thStyle = {
-  padding: '8px 12px', textAlign: 'left', fontWeight: '500',
-  background: 'var(--gray-light)', borderBottom: '2px solid var(--border)',
-  borderRight: '1px solid var(--border)', whiteSpace: 'nowrap',
-  fontSize: '12px', color: 'var(--text)',
-}
-const tdStyle = {
-  padding: '6px 12px', borderRight: '1px solid var(--border)',
-  maxWidth: '300px',
 }

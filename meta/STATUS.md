@@ -6,6 +6,8 @@
 ---
 
 ## Versão Atual
+**[0.1.12]** — 2026-11-25 — Fase 2b da grade: o CSV usa o `DataGrid` compartilhado (TanStack Table v8) — largura de coluna fixa, célula selecionada com teclado (setas, Enter/F2/digitar edita, Enter grava e desce, Delete limpa), vazio não vale 0 na ordenação. Build verde; **conferência na tela pendente** (roteiro do dono, conversa de 2026-11-25).
+**[0.1.11]** — 2026-11-23 — Fase 2a da grade: desfazer e refazer por arquivo (Ctrl+Z / Ctrl+Y, botões ↶ ↷). **Conferido na tela pelo dono em 2026-11-25: 7/7 ok.** *(Registro feito pela wo0009: o `/wrap` da wo0008 não chegou ao disco.)*
 **[0.1.10]** — 2026-11-17 — Fase 1 da grade (DEC-013): fechar com alteração não salva pergunta; CSV com lixeira + Desfazer, «+ Linha» visível com filtro, 3º clique tira a ordenação; CSV e JSON regravam no formato do arquivo (fim de linha, recuo, quebra final). Build verde; **conferido na tela pelo dono em 2026-11-20: 7/7 ok.**
 **[0.1.9]** — 2026-11-17 — JSON: edição que não serve ao tipo não grava mais (era `null`/`0` em silêncio) e chave com ponto passa a ser editável (FIX-004); CSV: abrir uma célula não rearranja mais a tabela (FIX-005). Build verde; **conferido na tela pelo dono em 2026-11-17: 13/13 ok.**
 **[0.1.8]** — 2026-11-11 — PDF no visualizador nativo do navegador (`<iframe>`), sem `pdfjs-dist` (DEC-012). Build verde; **conferido na tela pelo dono em 2026-11-12: 6/6 ok.**
@@ -37,7 +39,7 @@
 ## 📋 Backlog (curto prazo — itens acionáveis)
 - [ ] **Busca Ctrl+F no SourceEditor** — highlight de ocorrências no textarea.
 - [ ] **Tooltips customizados** na toolbar do editor MD.
-- [ ] **Fase 2 da grade (DEC-013):** `DataGrid` compartilhado pelo CSV e pelo `ArrayTable`, sobre TanStack Table v8; largura de coluna estável; célula selecionada com teclado; desfazer por arquivo. Plano em `meta/analises/261117-ANALISE-ux-tabelas-e-json.md` e ROADMAP F2b.
+- [ ] **Fase 2c da grade (DEC-013):** o `ArrayTable` do JSON passa a usar o `DataGrid` (caminho em lista do FIX-004, validação de tipo, `RowDetailModal` pela linha). Spec `meta/specs/261123-grade-de-dados-fase2.md`. **Medir antes da fase 3:** abrir `../261112-roteiro-teste/teste-50k.csv` e cronometrar (a grade ainda não virtualiza as linhas).
 - [ ] **Atualizar o `README.md` e decidir a versão do `package.json`** — README sem o modo Formulário, edição inline e Tab do CSV; `package.json` ainda em `0.1.0` (CHANGELOG está em 0.1.8). Decidir se a versão do package acompanha o CHANGELOG.
 
 ## 💬 Última conversa

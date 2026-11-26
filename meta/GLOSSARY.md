@@ -14,12 +14,13 @@
 - **ActiveFile** — objeto derivado em AppContext: `files.find(f => f.id === activeId)`. É o arquivo atualmente em foco.
 - **isDirty** — `true` quando `content !== originalContent`. Exibe o dot laranja na tab e na sidebar; habilita o botão "Salvar ↓".
 - **Blob URL** — URL do tipo `blob:http://localhost:5173/...` criada com `URL.createObjectURL(blob)`. É como o PDF fica no estado React (`content`) e o que o `<iframe>` do `PdfViewer` abre (DEC-012); nasceu para evitar o ArrayBuffer detachado pelo worker do PDF.js (FIX-001). Deve ser revogada com `URL.revokeObjectURL` ao fechar o arquivo.
-- **`__dataIdx`** — campo interno injetado em cada linha do array `filtered` no CsvViewer, que guarda o índice da linha no array `data` original. Garante que `commitEdit` opere sobre a linha correta mesmo com filtros/sort ativos.
+- **DataGrid** — `src/components/DataGrid.jsx`, a grade de dados compartilhada (DEC-013, fase 2b): TanStack Table v8 por baixo, seleção de célula por teclado, edição por cima da célula, largura de coluna fixa depois da abertura. A identidade da linha é o índice no dado original.
+- **`__dataIdx`** *(até 0.1.11)* — campo que o CsvViewer antigo injetava em cada linha filtrada para lembrar o índice original (FIX-002). Desde a 0.1.12 o `DataGrid` usa o próprio índice como identidade da linha.
 - **FormView** — o modo Formulário do JsonViewer; converte o JSON num layout visual (Cards/Tabs/Painel) em vez de árvore de nós.
 - **ArrayTable** — componente dentro do JsonViewer que renderiza um array de objetos como tabela HTML paginada, com truncamento e modal de detalhe (ver DEC-008).
 - **RowDetailModal** — overlay do `ArrayTable` com o registro completo (aberto por clique na linha, DEC-008). Editável desde 0.1.5: `<textarea>` para string, `<input>` para number/boolean/null (DEC-010).
 - **`ROW_CLICK_DELAY`** — constante (220 ms) do `JsonViewer.jsx`: atraso do clique-na-linha antes de abrir o modal, para o duplo clique numa célula poder cancelar e editar (DEC-010). `scheduleOpenModal` agenda; `startCellEdit` cancela.
-- **`commitValue` / `commitAndMove`** — funções do `CsvViewer.jsx` (0.1.6): `commitValue` só grava a célula no `data` original; `commitAndMove(forward)` grava e abre a próxima célula (Tab/Shift+Tab) percorrendo `filtered`, a ordem visível.
+- **`commitValue`** — função do `CsvViewer.jsx` que grava uma célula no `data` original pelo índice; desde a 0.1.12 a navegação por Tab mora no `DataGrid` (o antigo `commitAndMove` saiu).
 
 ## Arquiteturas / módulos
 - **AppContext** — Context + Provider em `src/context/AppContext.jsx`. Contém todo o estado da aplicação. Viewers e editors não gerenciam estado de arquivo próprio — apenas estado de UI local (editCell, search, scale, etc.).
