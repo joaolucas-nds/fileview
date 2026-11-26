@@ -1,7 +1,7 @@
 # SPEC — Fase 2 da grade de dados: desfazer por arquivo + `DataGrid` compartilhado (CSV e arrays do JSON)
 
 > **Origem:** DEC-013 e `meta/analises/261117-ANALISE-ux-tabelas-e-json.md` (fase 2). ROADMAP F2b.
-> **Status:** 2a aplicada (`wo0008`, `5eecf73`) e conferida na tela 7/7 em 2026-11-25 — versão 0.1.11; 2b em WO (`wo0009`, versão 0.1.12); 2c a escrever.
+> **Status:** 2a (`wo0008`, 0.1.11) e 2b (`wo0009`, `686097c`, 0.1.12) aplicadas e conferidas na tela (7/7 e 10/10, com 50 mil linhas sem travar, 2026-11-25); 2c em WO (`wo0010`, versão 0.1.13).
 > **Decidido na 2b (2026-11-25):** no campo de edição, Enter grava e DESCE uma linha (convenção de planilha; antes ficava na mesma célula); a barra «Desfazer» da exclusão fica, ao lado do Ctrl+Z; sem virtualização por enquanto — medir com `../261112-roteiro-teste/teste-50k.csv`.
 
 ## Problema
@@ -24,7 +24,7 @@ O FileView tem duas tabelas escritas à parte (`CsvViewer` e o `ArrayTable` do `
 - [ ] Célula selecionada: clique seleciona (realce), setas movem, Enter ou digitar abre a edição, Esc sai, Delete limpa o valor; F2 edita.
 - [ ] 50 mil linhas abrem e rolam sem travar (medir; se não, virtualizar as linhas com TanStack Virtual).
 
-**2c — `ArrayTable` do JSON no `DataGrid` (a escrever)**
+**2c — `ArrayTable` do JSON no `DataGrid` (`wo0010`; decisões na DEC-014: sem paginação, registro pelo nº da linha)**
 - [ ] O `ArrayTable` passa a usar o `DataGrid`, com o caminho em lista (FIX-004) e a validação de tipo (`parseEditedValue`); o `RowDetailModal` continua abrindo pela linha.
 - [ ] Os roteiros de 2026-11-12 e da 0.1.9 passam de novo, item a item.
 

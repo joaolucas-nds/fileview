@@ -10,6 +10,14 @@
 
 ---
 
+## [0.1.13] — 2026-11-25
+### Modificado
+- **JSON (Formulário) — tabela nova:** arrays de objetos usam a mesma grade do CSV. Sem paginação (a tabela rola por dentro, cabeçalho preso); clique no cabeçalho ordena; célula selecionada com teclado (setas, Enter/F2/digitar edita, Enter grava e desce, Tab avança, Esc cancela, Delete limpa).
+- **JSON — registro completo:** abre pelo número da linha (clique) ou Shift+Enter, não mais pelo clique em qualquer ponto da linha (DEC-014). Depois de editar no registro, ele mostra o valor já gravado.
+- **JSON — tipo na tabela:** valor que não serve ao tipo deixa o campo aberto com borda vermelha e o motivo ao passar o mouse; Delete num número ou true/false abre o campo vazio com o motivo.
+
+---
+
 ## [0.1.12] — 2026-11-25
 ### Adicionado
 - **CSV — célula selecionada e teclado:** clique seleciona; setas movem; Enter, F2 ou digitar começa a editar (digitar substitui o valor); no campo, Enter grava e desce uma linha, Tab grava e avança, Esc cancela; Delete limpa a célula.

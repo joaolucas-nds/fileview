@@ -93,7 +93,7 @@ O `title` HTML já existe em todos os botões. Tooltips visuais com delay melhor
 - **Editar conteúdo de PDF** — impossível no browser sem engine proprietária paga. Ver DEC-004.
 - **react-json-view** — sem manutenção desde 2021, incompatível com React 18. Ver DEC-003.
 - **TypeScript imediato** — aumentaria fricção no estágio atual; revisitar na F3.
-- **Virtualização de linhas (react-window) no ArrayTable** — complexidade desnecessária para o volume atual de dados (centenas de linhas); paginação simples resolve. Ver DEC-008. Revisitar se algum JSON real chegar a dezenas de milhares de itens.
+- **Virtualização de linhas (react-window) no ArrayTable** — complexidade desnecessária para o volume atual de dados (centenas de linhas); paginação simples resolve. Ver DEC-008. Revisitar se algum JSON real chegar a dezenas de milhares de itens. *(2026-11-25: a paginação saiu na DEC-014; a mesma grade rolou 50 mil linhas do CSV sem travar — virtualizar segue desnecessário.)*
 - **PDF: anotações overlay via `pdf-lib`** (ideia de 2026-06-05) — descartada em 2026-11-11: com o PDF no visualizador nativo (DEC-012) não há canvas próprio onde desenhar. Volta só se o PDF voltar a ser desenhado pelo FileView.
 
 ---

@@ -6,7 +6,8 @@
 ---
 
 ## Versão Atual
-**[0.1.12]** — 2026-11-25 — Fase 2b da grade: o CSV usa o `DataGrid` compartilhado (TanStack Table v8) — largura de coluna fixa, célula selecionada com teclado (setas, Enter/F2/digitar edita, Enter grava e desce, Delete limpa), vazio não vale 0 na ordenação. Build verde; **conferência na tela pendente** (roteiro do dono, conversa de 2026-11-25).
+**[0.1.13]** — 2026-11-25 — Fase 2c da grade: a tabela do JSON (Formulário) usa o mesmo `DataGrid` do CSV — sem paginação (rola por dentro), ordenar pelo cabeçalho, célula selecionada com teclado, valor que não serve ao tipo deixa o campo aberto com borda vermelha; o registro completo abre pelo nº da linha ou Shift+Enter (DEC-014). Build verde; **conferência na tela pendente** (roteiro do dono, conversa 2 de 2026-11-25).
+**[0.1.12]** — 2026-11-25 — Fase 2b da grade: o CSV usa o `DataGrid` compartilhado (TanStack Table v8) — largura de coluna fixa, célula selecionada com teclado (setas, Enter/F2/digitar edita, Enter grava e desce, Delete limpa), vazio não vale 0 na ordenação. Build verde; **conferido na tela pelo dono em 2026-11-25: 1 a 9 ok; 50 mil linhas abrem em poucos segundos e rolam sem travar.**
 **[0.1.11]** — 2026-11-23 — Fase 2a da grade: desfazer e refazer por arquivo (Ctrl+Z / Ctrl+Y, botões ↶ ↷). **Conferido na tela pelo dono em 2026-11-25: 7/7 ok.** *(Registro feito pela wo0009: o `/wrap` da wo0008 não chegou ao disco.)*
 **[0.1.10]** — 2026-11-17 — Fase 1 da grade (DEC-013): fechar com alteração não salva pergunta; CSV com lixeira + Desfazer, «+ Linha» visível com filtro, 3º clique tira a ordenação; CSV e JSON regravam no formato do arquivo (fim de linha, recuo, quebra final). Build verde; **conferido na tela pelo dono em 2026-11-20: 7/7 ok.**
 **[0.1.9]** — 2026-11-17 — JSON: edição que não serve ao tipo não grava mais (era `null`/`0` em silêncio) e chave com ponto passa a ser editável (FIX-004); CSV: abrir uma célula não rearranja mais a tabela (FIX-005). Build verde; **conferido na tela pelo dono em 2026-11-17: 13/13 ok.**
@@ -18,7 +19,7 @@
 ## ✅ Funcionando
 - **Markdown:** preview renderizado (igual ao Claude), editor WYSIWYG Tiptap completo (toolbar + BubbleMenu ao selecionar texto), modo fonte (textarea dark)
 - **JSON — Árvore:** árvore recursiva colapsável, cores por tipo de dado, edição inline de valores folha (double-click + Enter/Esc), formatar/minificar
-- **JSON — Formulário:** chaves de 1º nível viram cards/tabs/painel; arrays de objetos viram tabela paginada (20 linhas/página) com colunas truncadas (ellipsis); campos primitivos (Cards/Tabs/Painel) editáveis com duplo clique (Enter confirma, Esc cancela); **células do ArrayTable editáveis com duplo clique direto na tabela**; **clique numa linha abre o `RowDetailModal` com o registro completo, também editável (duplo clique num valor → textarea para string, input para number/boolean/null)** — path resolvido via índice ORIGINAL da linha no array, não a posição pós-paginação; sub-switcher `Cards | Tabs | Painel` persistido em localStorage; cards de tabela ocupam a largura total da grade
+- **JSON — Formulário:** chaves de 1º nível viram cards/tabs/painel; arrays de objetos viram tabela no `DataGrid` (o mesmo do CSV, desde 0.1.13): sem paginação, rola por dentro com o cabeçalho preso, ordena pelo cabeçalho, célula selecionada com teclado, edição com validação de tipo (inválido deixa o campo aberto, borda vermelha); **o nº da linha (ou Shift+Enter) abre o `RowDetailModal` com o registro completo, também editável** (textarea para string, input para number/boolean/null); campos primitivos (Cards/Tabs/Painel) editáveis com duplo clique; toda edição grava pelo índice ORIGINAL da linha; sub-switcher `Cards | Tabs | Painel` persistido em localStorage; cards de tabela ocupam a largura total da grade
 - **CSV:** tabela com cabeçalho fixo sticky, ordenação por coluna (asc/desc), filtro com botão "limpar", edição inline com botão ✕ cancelar (Enter confirma, Esc/✕ cancela), **Tab confirma e move para a próxima célula (Shift+Tab volta), seguindo a ordem visível — pula de coluna em coluna e, na borda, para a linha seguinte/anterior**, adicionar linha, deletar linha — edição opera sobre `data` original mesmo com filtro ativo
 - **PDF:** visualizador nativo do navegador dentro da aba do FileView (`<iframe>` com a Blob URL, DEC-012) — zoom, Ctrl+roda, busca, seleção de texto, impressão e miniaturas vêm do navegador. Só leitura (DEC-004).
 - **GitHub Pages:** deploy automático via GitHub Actions (`.github/workflows/deploy.yml`, Node 24) — build roda no servidor do GitHub, publica apenas o `dist/`. Confirmado funcionando em produção em `https://joaolucas-nds.github.io/fileview/`.
@@ -39,10 +40,12 @@
 ## 📋 Backlog (curto prazo — itens acionáveis)
 - [ ] **Busca Ctrl+F no SourceEditor** — highlight de ocorrências no textarea.
 - [ ] **Tooltips customizados** na toolbar do editor MD.
-- [ ] **Fase 2c da grade (DEC-013):** o `ArrayTable` do JSON passa a usar o `DataGrid` (caminho em lista do FIX-004, validação de tipo, `RowDetailModal` pela linha). Spec `meta/specs/261123-grade-de-dados-fase2.md`. **Medir antes da fase 3:** abrir `../261112-roteiro-teste/teste-50k.csv` e cronometrar (a grade ainda não virtualiza as linhas).
+- [ ] **Fase 3 da grade (DEC-013):** filtro por coluna com facetas e chips; ordenação em níveis (Shift+clique). Spec a escrever pelo chat, com a Mapoteca como referência (`ColumnFilter.svelte`, `filter/spec.ts`).
 - [ ] **Atualizar o `README.md` e decidir a versão do `package.json`** — README sem o modo Formulário, edição inline e Tab do CSV; `package.json` ainda em `0.1.0` (CHANGELOG está em 0.1.8). Decidir se a versão do package acompanha o CHANGELOG.
 
 ## 💬 Última conversa
+**2026-11-25 (chat + Code, wo0008–wo0010)** — Fase 2 da grade: 0.1.11 desfazer por arquivo (conferida 7/7), 0.1.12 `DataGrid` no CSV (`686097c`, conferida 1–9 + 50 mil linhas), 0.1.13 `ArrayTable` no `DataGrid` (DEC-014, wo0010, conferência pendente).
+
 **2026-11-11 (chat + Code, wo0003)** — DEC-012: PDF no visualizador nativo do navegador (`<iframe>`), `pdfjs-dist` removido (commit `3b9cea3`, empurrado), versão 0.1.8. Build verde; conferência na tela pendente (roteiro do dono). Detalhe em `logs/2026-11-11.md`.
 
 **2026-11-11 (chat + Code, wo0002)** — FIX-003: `key={activeFile.id}` em `ViewerRouter.jsx` (commit `3d108e5`, empurrado), versão 0.1.7. Build verde; conferência na tela pendente (roteiro do dono). Voltar a uma aba reabre do topo; lembrar a posição virou ideia no IDEAS. Detalhe em `logs/2026-11-11.md`.

@@ -1,5 +1,6 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
+import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
+import DataGrid from '../components/DataGrid'
 
 // Cores por tipo de dado
 const TYPE_COLOR = {
@@ -290,14 +291,6 @@ function Field({ label, value, path, onUpdate }) {
   )
 }
 
-// Botão de paginação
-const pageBtn = (disabled) => ({
-  padding: '2px 9px', fontSize: '11px', borderRadius: 'var(--radius-sm)',
-  border: '1px solid var(--border)', background: 'var(--surface)',
-  color: disabled ? 'var(--text-faint)' : 'var(--text)',
-  cursor: disabled ? 'not-allowed' : 'pointer',
-})
-
 // Modal de detalhe — mostra o registro completo sem truncamento, campo por campo.
 // Edição inline (2026-07-07, sessão 2): duplo clique num valor primitivo edita.
 // Strings usam <textarea> (não <input>) porque o caso que motivou este modal
@@ -365,7 +358,7 @@ function RowDetailModal({ row, rowIdx, path, onUpdate, onClose }) {
           }}>✕</button>
         </div>
         <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {Object.entries(row).filter(([k]) => k !== '__dataIdx').map(([k, v]) => {
+          {Object.entries(row).map(([k, v]) => {
             const editable = canEdit && isEditablePrimitive(v)
             const editing = editKey === k
             return (
@@ -419,169 +412,67 @@ function RowDetailModal({ row, rowIdx, path, onUpdate, onClose }) {
   )
 }
 
-// Tabela para arrays de objetos uniformes.
-// Colunas com table-layout:fixed + ellipsis de uma linha evitam que texto longo
-// (ex: text_content) estique a altura da linha. Paginação evita renderizar
-// centenas de linhas de uma vez. Clique na linha abre o registro completo.
-//
-// Edição inline (2026-07-07, sessão 2): duplo clique numa célula primitiva edita
-// direto na tabela. Conflito resolvido: clique simples na linha abre o modal,
-// mas um pequeno atraso (`ROW_CLICK_DELAY`) dá tempo do 2º clique de um duplo
-// clique chegar e cancelar a abertura — sem o atraso, o 1º clique do duplo
-// clique sempre abriria o modal antes do dblclick ser reconhecido (o evento
-// `click` do DOM dispara nos dois cliques de um duplo clique, não só o
-// `dblclick`). Padrão comum em listas (Explorer, Gmail) para essa ambiguidade.
-// `path` é a chave da seção (ex.: "users"); o path de cada célula editada é
-// [...path, índiceORIGINAL, coluna] — índice original da linha no array
-// completo, não a posição pós-paginação (mesma classe de cuidado do FIX-002).
-const ROWS_PER_PAGE = 20
-const ROW_CLICK_DELAY = 220 // ms — janela para o 2º clique de um duplo clique chegar
+// Tabela para arrays de objetos (fase 2c, DEC-013): a mesma grade do CSV
+// (`DataGrid`, TanStack Table v8) — largura de coluna fixa, celula selecionada
+// com teclado, ordenar pelo cabecalho. Sem paginacao: a grade rola por dentro
+// (ate `TABLE_MAX_HEIGHT`) e o cabecalho fica preso no alto.
+// O registro completo abre pelo NUMERO da linha (clique ou Shift+Enter); antes
+// abria no clique da linha, com um atraso para nao brigar com o duplo clique —
+// com a celula selecionavel, o clique simples passou a ser «selecionar».
+// `path` e a chave da secao (lista, FIX-004); a celula editada grava em
+// [...path, indiceORIGINAL, coluna] — a grade devolve sempre o indice da linha
+// no array, nunca a posicao visivel (mesma regra do FIX-002 no CSV). Valor que
+// nao serve ao tipo (`parseEditedValue`) volta como { ok: false } e a grade
+// mantem o campo aberto com a borda vermelha.
+const TABLE_MAX_HEIGHT = '420px'
+
+// Texto de uma celula do JSON: vazio para null/ausente, objeto/array como JSON
+function cellText(v) {
+  if (v === null || v === undefined) return ''
+  return typeof v === 'object' ? JSON.stringify(v) : String(v)
+}
 
 function ArrayTable({ value, path, onUpdate }) {
-  const keys = arrayKeys(value)
-  const [page, setPage] = useState(0)
-  const [selected, setSelected] = useState(null) // { row, idx } — idx é o índice ORIGINAL no array
-  const [editCell, setEditCell] = useState(null) // { idx, col }
-  const [editVal, setEditVal] = useState('')
-  const clickTimer = useRef(null)
-  const totalPages = Math.max(1, Math.ceil(value.length / ROWS_PER_PAGE))
-
+  const keys = useMemo(() => arrayKeys(value), [value])
+  // Indice ORIGINAL da linha aberta no modal; o registro e relido de `value` a
+  // cada render, entao o modal mostra o valor ja gravado depois de uma edicao
+  const [openIdx, setOpenIdx] = useState(null)
   const canEdit = !!onUpdate && !!path
 
-  // Reseta a página se o array mudar (troca de arquivo)
-  useEffect(() => { setPage(0) }, [value])
-
-  // Limpa o timer pendente se o componente desmontar no meio da janela de espera
-  useEffect(() => () => { if (clickTimer.current) clearTimeout(clickTimer.current) }, [])
-
-  const pageRows = value.slice(page * ROWS_PER_PAGE, page * ROWS_PER_PAGE + ROWS_PER_PAGE)
-
-  const scheduleOpenModal = (row, idx) => {
-    if (clickTimer.current) clearTimeout(clickTimer.current)
-    clickTimer.current = setTimeout(() => {
-      setSelected({ row, idx })
-      clickTimer.current = null
-    }, ROW_CLICK_DELAY)
-  }
-
-  // Erro de tipo da edicao em curso (FIX-004).
-  const [editErr, setEditErr] = useState(null)
-
-  const startCellEdit = (e, idx, col, val) => {
-    e.stopPropagation()
-    if (clickTimer.current) { clearTimeout(clickTimer.current); clickTimer.current = null }
-    if (!canEdit || !isEditablePrimitive(val)) return
-    setEditVal(val === null ? '' : typeof val === 'string' ? val : String(val))
-    setEditErr(null)
-    setEditCell({ idx, col })
-  }
-
-  const commitCellEdit = () => {
-    if (!editCell) return
-    const { idx, col } = editCell
-    const original = value[idx]?.[col] ?? null
-    const r = parseEditedValue(original, editVal)
-    if (!r.ok) { setEditErr(r.error); return }
-    setEditErr(null)
+  const commitCell = (idx, col, text) => {
+    const r = parseEditedValue(value[idx]?.[col] ?? null, text)
+    if (!r.ok) return r
     onUpdate([...path, idx, col], r.value)
-    setEditCell(null)
   }
 
   return (
     <div>
-      {value.length > ROWS_PER_PAGE && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontSize: '11px', color: 'var(--text-faint)' }}>
-          <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} style={pageBtn(page === 0)}>◀</button>
-          <span>
-            Linhas {page * ROWS_PER_PAGE + 1}–{Math.min((page + 1) * ROWS_PER_PAGE, value.length)} de {value.length} · página {page + 1}/{totalPages}
-          </span>
-          <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} style={pageBtn(page >= totalPages - 1)}>▶</button>
-        </div>
-      )}
-
-      <div style={{ overflowX: 'auto', border: '0.5px solid var(--border)', borderRadius: 'var(--radius-sm)' }}>
-        <table style={{ borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed', fontSize: '12px' }}>
-          <thead>
-            <tr>
-              {keys.map(k => (
-                <th key={k} title={k} style={{
-                  padding: '5px 10px', textAlign: 'left', background: 'var(--gray-light)',
-                  border: '0.5px solid var(--border)', fontFamily: 'var(--font-mono)', fontWeight: '500',
-                  color: 'var(--amber)', width: '170px',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }}>
-                  {k}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {pageRows.map((row, i) => {
-              const originalIdx = page * ROWS_PER_PAGE + i
-              return (
-                <tr
-                  key={originalIdx}
-                  onClick={() => scheduleOpenModal(row, originalIdx)}
-                  style={{ cursor: 'pointer' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'var(--gray-light)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  {keys.map(k => {
-                    const cellVal = row[k] ?? null
-                    const editable = canEdit && isEditablePrimitive(cellVal)
-                    const editing = editCell && editCell.idx === originalIdx && editCell.col === k
-                    const preview = cellVal === null ? '' : typeof cellVal === 'object' ? JSON.stringify(cellVal) : String(cellVal)
-                    return (
-                      <td key={k} title={editing ? undefined : preview} style={{
-                        padding: editing ? '2px' : '5px 10px', border: '0.5px solid var(--border)',
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        cursor: editable ? 'text' : 'default',
-                      }}
-                        onDoubleClick={e => startCellEdit(e, originalIdx, k, cellVal)}
-                      >
-                        {editing ? (
-                          <input
-                            autoFocus
-                            value={editVal}
-                            onClick={e => e.stopPropagation()}
-                            onChange={e => setEditVal(e.target.value)}
-                            title={editErr || undefined}
-                            onBlur={commitCellEdit}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') commitCellEdit()
-                              if (e.key === 'Escape') setEditCell(null)
-                            }}
-                            style={{
-                              width: '100%', fontSize: '12px', fontFamily: 'var(--font-mono)',
-                              border: `1px solid ${editErr ? 'var(--red)' : 'var(--accent)'}`, borderRadius: '3px',
-                              padding: '3px 6px', background: 'var(--accent-light)',
-                              color: 'var(--text)', outline: 'none',
-                            }}
-                          />
-                        ) : (
-                          <TypedValue value={cellVal} />
-                        )}
-                      </td>
-                    )
-                  })}
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+      <div style={{ border: '0.5px solid var(--border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+        <DataGrid
+          columns={keys}
+          rows={value}
+          onCommit={commitCell}
+          toText={cellText}
+          renderCell={v => (v !== null && typeof v === 'object')
+            ? <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)' }}>{JSON.stringify(v)}</span>
+            : <TypedValue value={v ?? null} />}
+          canEditCell={v => canEdit && isEditablePrimitive(v ?? null)}
+          onOpenRow={setOpenIdx}
+          maxHeight={TABLE_MAX_HEIGHT}
+        />
       </div>
 
       <div style={{ fontSize: '10px', color: 'var(--text-faint)', marginTop: '5px' }}>
-        Clique numa linha para ver o registro completo · duplo clique numa célula edita direto{canEdit ? '' : ' (indisponível para esta seção)'}
+        {value.length} linhas · clique seleciona · setas movem · Enter, F2 ou digitar edita · Enter grava e desce · Tab avança · Esc cancela · clique no cabeçalho ordena · o nº da linha (ou Shift+Enter) abre o registro completo{canEdit ? '' : ' · edição indisponível para esta seção'}
       </div>
 
-      {selected && (
+      {openIdx !== null && value[openIdx] && (
         <RowDetailModal
-          row={selected.row}
-          rowIdx={selected.idx}
+          row={value[openIdx]}
+          rowIdx={openIdx}
           path={path}
           onUpdate={onUpdate}
-          onClose={() => setSelected(null)}
+          onClose={() => setOpenIdx(null)}
         />
       )}
     </div>

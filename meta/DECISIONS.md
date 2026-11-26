@@ -117,7 +117,7 @@ Mesmo com `deploy.yml` correto e o build passando (verificado no log do Actions:
 ---
 
 ## DEC-008 — Tabelas grandes: truncamento + paginação + modal de detalhe
-**Data:** 2026-07-01 · **Status:** aceita
+**Data:** 2026-07-01 · **Status:** aceita; a paginação foi substituída pela DEC-014 (2026-11-25) — truncamento e modal continuam
 
 ### Contexto
 O ArrayTable do JSON Formulário renderizava todas as linhas e colunas sem limite de largura. Com dados reais (162 linhas, 10 colunas, coluna `text_content` com centenas de caracteres por célula), o resultado era ilegível: linhas esticadas verticalmente pelo texto longo, e no layout Cards a tabela ficava espremida num card de 260px mostrando só 1-2 colunas.
@@ -185,7 +185,7 @@ Você decidiu migrar para o padrão sugerido pelo kit: `AAMMDD-asuNNNN.yaml` (da
 ---
 
 ## DEC-010 — ArrayTable/RowDetailModal: debounce de clique para distinguir "abrir modal" de "editar célula"
-**Data:** 2026-07-07 · **Status:** aceita
+**Data:** 2026-07-07 · **Status:** substituída pela DEC-014 (2026-11-25) — o modal abre pelo número da linha; a nota do textarea continua valendo
 
 ### Contexto
 Ao estender a edição inline para dentro do `ArrayTable` (células) e do `RowDetailModal` (registro completo), surgiu um conflito de interação: a tabela já usava **clique simples na linha** para abrir o modal (desde o DEC-008). Adicionar **duplo clique na célula** para editar esbarra nisso, porque o evento `click` do DOM dispara duas vezes num duplo clique (uma vez por cada clique), antes do `dblclick` ser reconhecido — ou seja, um duplo clique numa célula abriria o modal no primeiro clique e só editaria a célula depois, ou os dois comportamentos disparariam juntos.
@@ -265,6 +265,28 @@ O dono pediu tabelas melhores (filtrar, ordenar, agrupar — com a Mapoteca como
 
 ### Consequências
 A fase 2 é um refactor do `JsonViewer.jsx` e do `CsvViewer.jsx` sem recurso grande visível — entra junto com a seleção de célula por teclado para não ficar invisível. Cada fase fecha com roteiro do dono. O roteiro de 2026-11-12 (CSV Tab, edição do JSON) e o da 0.1.9 viram a rede de regressão da grade nova.
+
+---
+
+## DEC-014 — JSON: tabela no `DataGrid`, sem paginação, registro completo pelo número da linha
+**Data:** 2026-11-25 · **Status:** aceita (fase 2c da DEC-013)
+
+### Contexto
+Na fase 2c o `ArrayTable` passa à grade do CSV. A grade tem célula selecionável: o clique simples SELECIONA. O `ArrayTable` antigo usava o clique simples para abrir o `RowDetailModal`, com 220 ms de atraso para o duplo clique cancelar (DEC-010), e paginava de 20 em 20 (DEC-008).
+
+### Decisão
+1. **Sem paginação:** a tabela rola por dentro (até 420 px) com o cabeçalho preso. O CSV mediu 50 mil linhas sem travar na mesma grade (roteiro do dono, 2026-11-25); arrays de JSON são bem menores.
+2. **Registro completo pelo número da linha:** clique no nº (com o ícone ⤢) ou Shift+Enter na célula selecionada. O atraso de clique da DEC-010 sai.
+3. **Validação de tipo dentro da grade:** `onCommit` pode devolver `{ ok: false, error }`; a grade mantém o campo aberto com borda vermelha (FIX-004). Delete num número ou boolean abre o campo vazio com o motivo, em vez de falhar calado.
+4. Célula com objeto/array aninhado mostra o JSON numa linha e não edita (como antes).
+
+### Alternativas consideradas
+- **Manter clique na linha = modal:** brigaria com a seleção de célula e com o teclado; ou o clique abriria o modal toda vez que se quisesse só selecionar.
+- **Ícone numa coluna própria ao fim:** mais um alvo pequeno e longe do olho; o nº da linha já é a «alça» da linha (padrão de planilha).
+- **Manter a paginação dentro da grade:** dois mecanismos para o mesmo problema; a rolagem com cabeçalho preso já resolve.
+
+### Consequências
+O roteiro da 0.1.5 («clique na linha abre o registro») muda: agora é o nº da linha. O modal passa a reler o registro do array a cada render — depois de editar no modal, ele mostra o valor gravado. Ordenar pelo cabeçalho chega ao JSON de graça.
 
 ---
 

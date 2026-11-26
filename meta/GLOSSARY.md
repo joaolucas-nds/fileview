@@ -17,9 +17,9 @@
 - **DataGrid** — `src/components/DataGrid.jsx`, a grade de dados compartilhada (DEC-013, fase 2b): TanStack Table v8 por baixo, seleção de célula por teclado, edição por cima da célula, largura de coluna fixa depois da abertura. A identidade da linha é o índice no dado original.
 - **`__dataIdx`** *(até 0.1.11)* — campo que o CsvViewer antigo injetava em cada linha filtrada para lembrar o índice original (FIX-002). Desde a 0.1.12 o `DataGrid` usa o próprio índice como identidade da linha.
 - **FormView** — o modo Formulário do JsonViewer; converte o JSON num layout visual (Cards/Tabs/Painel) em vez de árvore de nós.
-- **ArrayTable** — componente dentro do JsonViewer que renderiza um array de objetos como tabela HTML paginada, com truncamento e modal de detalhe (ver DEC-008).
-- **RowDetailModal** — overlay do `ArrayTable` com o registro completo (aberto por clique na linha, DEC-008). Editável desde 0.1.5: `<textarea>` para string, `<input>` para number/boolean/null (DEC-010).
-- **`ROW_CLICK_DELAY`** — constante (220 ms) do `JsonViewer.jsx`: atraso do clique-na-linha antes de abrir o modal, para o duplo clique numa célula poder cancelar e editar (DEC-010). `scheduleOpenModal` agenda; `startCellEdit` cancela.
+- **ArrayTable** — componente do JsonViewer que mostra um array de objetos como tabela. Desde 0.1.13 usa o `DataGrid` (DEC-014): sem paginação, rola por dentro, ordena pelo cabeçalho, célula selecionável.
+- **RowDetailModal** — overlay do `ArrayTable` com o registro completo, campo por campo. Desde 0.1.13 abre pelo **número da linha** (clique ou Shift+Enter, DEC-014); edita com `<textarea>` para string e `<input>` para number/boolean/null.
+- **`ROW_CLICK_DELAY`** *(até 0.1.12)* — atraso de 220 ms do clique na linha antes de abrir o modal, para o duplo clique poder cancelar (DEC-010). Saiu na 0.1.13: o modal abre pelo número da linha (DEC-014).
 - **`commitValue`** — função do `CsvViewer.jsx` que grava uma célula no `data` original pelo índice; desde a 0.1.12 a navegação por Tab mora no `DataGrid` (o antigo `commitAndMove` saiu).
 
 ## Arquiteturas / módulos

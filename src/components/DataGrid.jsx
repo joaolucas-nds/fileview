@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useReactTable, getCoreRowModel, getSortedRowModel, getFilteredRowModel } from '@tanstack/react-table'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Maximize2 } from 'lucide-react'
 
 /**
  * Grade de dados compartilhada (DEC-013; spec 261123, fase 2b). Hoje usada pelo
- * CSV; na 2c passa a servir o ArrayTable do JSON. A logica de ordenar e filtrar
- * vem do TanStack Table v8 (headless); o visual e o teclado sao nossos.
+ * CSV e pelo ArrayTable do JSON (fase 2c). A logica de ordenar e filtrar vem
+ * do TanStack Table v8 (headless); o visual e o teclado sao nossos.
  *
  * Identidade da linha = indice dela em `rows` (o dado ORIGINAL, na ordem do
  * arquivo). Toda edicao e devolvida por esse indice, nunca pela posicao
@@ -14,18 +14,31 @@ import { Trash2 } from 'lucide-react'
  * @param {string[]} columns       nomes das colunas, na ordem do arquivo
  * @param {object[]} rows          um objeto por registro (chave = coluna)
  * @param {string}   globalFilter  busca em todas as colunas (sem diferenciar maiusculas)
- * @param {(rowIdx:number, col:string, value:string) => void} onCommit
+ * @param {(rowIdx:number, col:string, text:string) => (void|{ok:false, error:string})} onCommit
+ *        devolvendo { ok: false, error } a grade NAO fecha o campo: borda vermelha
+ *        e o motivo no title (validacao de tipo do JSON, FIX-004)
+ * @param {(value:any) => string} [toText]  texto da celula para medir, filtrar,
+ *        ordenar e abrir a edicao; padrao: o valor como texto, vazio para null
+ * @param {(value:any) => any} [renderCell]  como desenhar o valor (padrao: o texto)
+ * @param {(value:any) => boolean} [canEditCell]  sem ela, toda celula e editavel
+ * @param {(rowIdx:number) => void} [onOpenRow]  com ela, o numero da linha abre o
+ *        registro completo (clique ou Shift+Enter)
+ * @param {string} [maxHeight]  altura maxima (a grade rola por dentro)
  * @param {(rowIdx:number) => void} [onDeleteRow]   sem ela, nao ha coluna da lixeira
  * @param {{rowIdx:number, col:string, nonce:number}} [editRequest]  abre a edicao de fora (ex.: «+ Linha»)
  * @param {(visible:number) => void} [onVisibleCountChange]
  */
-export default function DataGrid({ columns, rows, globalFilter = '', onCommit, onDeleteRow, editRequest, onVisibleCountChange }) {
+export default function DataGrid({
+  columns, rows, globalFilter = '', onCommit, onDeleteRow, editRequest, onVisibleCountChange,
+  toText = defaultText, renderCell, canEditCell, onOpenRow, maxHeight,
+}) {
   const [sorting, setSorting] = useState([])
   // Selecao e edicao guardam a IDENTIDADE da celula (indice original + coluna),
   // nao a posicao: ordenar ou filtrar nao troca a celula selecionada.
   const [selected, setSelected] = useState(null) // { rowId, col }
   const [editing, setEditing] = useState(null)   // { rowId, col }
   const [editVal, setEditVal] = useState('')
+  const [editErr, setEditErr] = useState(null) // motivo recusado pelo onCommit
   const wrapRef = useRef(null)
 
   // Largura de cada coluna medida UMA vez, na abertura (cabecalho + ate 200
@@ -36,7 +49,7 @@ export default function DataGrid({ columns, rows, globalFilter = '', onCommit, o
   const widths = useMemo(() => {
     const sample = rows.slice(0, 200)
     return columns.map(c => {
-      const longest = Math.max(String(c).length, ...sample.map(r => String(r[c] ?? '').length))
+      const longest = Math.max(String(c).length, ...sample.map(r => toText(r[c]).length))
       return Math.max(64, Math.min(320, Math.round(longest * 7.4 + 28)))
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -44,9 +57,9 @@ export default function DataGrid({ columns, rows, globalFilter = '', onCommit, o
 
   const columnDefs = useMemo(() => columns.map(c => ({
     id: c,
-    accessorFn: row => row[c] ?? '',
+    accessorFn: row => toText(row[c]),
     header: c,
-    sortingFn: compareCells,
+    sortingFn: (a, b, id) => compareText(a.getValue(id), b.getValue(id)),
   })), [widthKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const table = useReactTable({
@@ -63,7 +76,7 @@ export default function DataGrid({ columns, rows, globalFilter = '', onCommit, o
     sortDescFirst: false,
     enableMultiSort: false,
     globalFilterFn: (row, colId, value) =>
-      String(row.original[colId] ?? '').toLowerCase().includes(String(value).toLowerCase()),
+      String(row.getValue(colId)).toLowerCase().includes(String(value).toLowerCase()),
     getColumnCanGlobalFilter: () => true,
   })
 
@@ -79,6 +92,7 @@ export default function DataGrid({ columns, rows, globalFilter = '', onCommit, o
     setSelected(cell)
     setEditing(cell)
     setEditVal('')
+    setEditErr(null)
   }, [editRequest?.nonce]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // A celula selecionada fica sempre a vista (setas levam para fora da tela)
@@ -88,18 +102,27 @@ export default function DataGrid({ columns, rows, globalFilter = '', onCommit, o
     el?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
   }, [selected])
 
-  const valueOf = (rowId, col) => String(rows[Number(rowId)]?.[col] ?? '')
+  const rawOf = (rowId, col) => rows[Number(rowId)]?.[col]
+  const valueOf = (rowId, col) => toText(rawOf(rowId, col))
+  const editable = (cell) => !canEditCell || canEditCell(rawOf(cell.rowId, cell.col))
   const focusGrid = () => wrapRef.current?.focus({ preventScroll: true })
 
   const startEdit = (cell, initial) => {
     setSelected(cell)
+    if (!editable(cell)) return
     setEditing(cell)
     setEditVal(initial ?? valueOf(cell.rowId, cell.col))
+    setEditErr(null)
   }
 
-  // Grava so se mudou (evita passo vazio na pilha de desfazer)
+  // Grava so se mudou (evita passo vazio na pilha de desfazer). Devolve false
+  // quando o onCommit recusou o valor: quem chamou deixa o campo aberto.
   const commit = (cell, value) => {
-    if (value !== valueOf(cell.rowId, cell.col)) onCommit(Number(cell.rowId), cell.col, value)
+    if (value === valueOf(cell.rowId, cell.col)) return true
+    const r = onCommit(Number(cell.rowId), cell.col, value)
+    if (r && r.ok === false) { setEditErr(r.error || 'Valor inválido'); return false }
+    setEditErr(null)
+    return true
   }
 
   // Vizinha na ordem VISIVEL. Passando da borda da coluna, vai para a linha
@@ -138,8 +161,16 @@ export default function DataGrid({ columns, rows, globalFilter = '', onCommit, o
       if (next) setSelected(next)
       return
     }
+    if (e.key === 'Enter' && e.shiftKey && onOpenRow) { e.preventDefault(); onOpenRow(Number(selected.rowId)); return }
     if (e.key === 'Enter' || e.key === 'F2') { e.preventDefault(); startEdit(selected); return }
-    if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); commit(selected, ''); return }
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      // Limpar um valor que o tipo nao aceita vazio (numero, true/false) abre o
+      // campo vazio com o motivo, em vez de falhar calado
+      e.preventDefault()
+      if (!editable(selected)) return
+      if (!commit(selected, '')) { setEditing(selected); setEditVal('') }
+      return
+    }
     if (e.key === 'Escape') { e.preventDefault(); setSelected(null); return }
     if (e.key === 'Tab') {
       const next = neighbor(selected, 0, e.shiftKey ? -1 : 1, true)
@@ -155,7 +186,7 @@ export default function DataGrid({ columns, rows, globalFilter = '', onCommit, o
     if (e.key === 'Enter') {
       // Enter confirma e desce uma linha (planilha); na ultima, fica onde esta
       e.preventDefault()
-      commit(editing, editVal)
+      if (!commit(editing, editVal)) return
       const down = neighbor(editing, 1, 0, false)
       setSelected(down || editing)
       setEditing(null)
@@ -163,34 +194,38 @@ export default function DataGrid({ columns, rows, globalFilter = '', onCommit, o
     } else if (e.key === 'Tab') {
       // Tab confirma e abre a proxima celula na ordem visivel; na borda, fecha
       e.preventDefault()
-      commit(editing, editVal)
+      if (!commit(editing, editVal)) return
       const next = neighbor(editing, 0, e.shiftKey ? -1 : 1, true)
-      if (next) startEdit(next)
+      if (next && editable(next)) startEdit(next)
+      else if (next) { setEditing(null); setSelected(next); focusGrid() }
       else { setEditing(null); focusGrid() }
     } else if (e.key === 'Escape') {
       e.preventDefault()
       setEditing(null)
+      setEditErr(null)
       focusGrid()
     }
   }
 
-  // Sair do campo clicando fora confirma (padrao de edicao em celula)
+  // Sair do campo clicando fora confirma (padrao de edicao em celula). Valor
+  // recusado: o campo fica aberto, com a borda vermelha (FIX-004).
   const onEditBlur = () => {
     if (!editing) return
-    commit(editing, editVal)
-    setEditing(null)
+    if (commit(editing, editVal)) setEditing(null)
   }
 
-  const cancelEdit = () => { setEditing(null); focusGrid() }
+  const cancelEdit = () => { setEditing(null); setEditErr(null); focusGrid() }
 
-  const totalWidth = 44 + widths.reduce((a, b) => a + b, 0) + (onDeleteRow ? 36 : 0)
+  // Coluna do numero mais larga quando ele tambem e o botao do registro
+  const numWidth = onOpenRow ? 60 : 44
+  const totalWidth = numWidth + widths.reduce((a, b) => a + b, 0) + (onDeleteRow ? 36 : 0)
 
   return (
     <div ref={wrapRef} tabIndex={0} onKeyDown={onGridKeyDown}
-      style={{ flex: 1, overflow: 'auto', outline: 'none' }}>
+      style={{ flex: 1, overflow: 'auto', outline: 'none', maxHeight }}>
       <table style={{ borderCollapse: 'collapse', tableLayout: 'fixed', width: `${totalWidth}px`, minWidth: '100%', fontSize: '13px' }}>
         <colgroup>
-          <col style={{ width: '44px' }} />
+          <col style={{ width: `${numWidth}px` }} />
           {widths.map((w, i) => <col key={i} style={{ width: `${w}px` }} />)}
           {onDeleteRow && <col style={{ width: '36px' }} />}
         </colgroup>
@@ -216,24 +251,34 @@ export default function DataGrid({ columns, rows, globalFilter = '', onCommit, o
           {visible.map(row => (
             <tr key={row.id} style={{ borderBottom: '1px solid var(--border)' }}>
               <td style={{ ...tdStyle, color: 'var(--text-faint)', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>
-                {Number(row.id) + 1}
+                {onOpenRow ? (
+                  <button onClick={() => onOpenRow(Number(row.id))}
+                    title="Abrir o registro completo (Shift+Enter)" aria-label="Abrir registro"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', border: 'none', background: 'transparent', padding: 0, color: 'inherit', font: 'inherit', cursor: 'pointer' }}
+                    onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'inherit' }}
+                  >{Number(row.id) + 1}<Maximize2 size={10} /></button>
+                ) : Number(row.id) + 1}
               </td>
               {columns.map(col => {
                 const isSel = selected?.rowId === row.id && selected?.col === col
                 const isEditing = editing?.rowId === row.id && editing?.col === col
-                const value = row.original[col] ?? ''
+                const raw = row.original[col]
+                const text = toText(raw)
                 return (
                   <td key={col} data-cell={row.id + '|' + col}
                     onMouseDown={() => { if (!isEditing) setSelected({ rowId: row.id, col }) }}
                     onDoubleClick={() => startEdit({ rowId: row.id, col })}
+                    title={isEditing ? undefined : text}
                     style={{
                       ...tdStyle, position: 'relative',
+                      cursor: canEditCell && !canEditCell(raw) ? 'default' : 'cell',
                       boxShadow: isSel && !isEditing ? 'inset 0 0 0 2px var(--accent)' : 'none',
                     }}>
                     {/* O texto fica no lugar (invisivel na edicao); o campo vai POR CIMA
                         da celula e o ✕ fica fora, a direita (FIX-005). */}
                     <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', visibility: isEditing ? 'hidden' : 'visible' }}>
-                      {value || '\u00a0'}
+                      {renderCell ? renderCell(raw) : (text || '\u00a0')}
                     </span>
                     {isEditing && (
                       <>
@@ -243,10 +288,12 @@ export default function DataGrid({ columns, rows, globalFilter = '', onCommit, o
                           onChange={e => setEditVal(e.target.value)}
                           onBlur={onEditBlur}
                           onKeyDown={onEditKeyDown}
+                          title={editErr || undefined}
+                          aria-invalid={editErr ? true : undefined}
                           style={{
                             position: 'absolute', inset: 0, width: '100%', height: '100%',
                             boxSizing: 'border-box', zIndex: 2,
-                            border: '1px solid var(--accent)', borderRadius: '3px',
+                            border: `1px solid ${editErr ? 'var(--red)' : 'var(--accent)'}`, borderRadius: '3px',
                             padding: '0 11px', background: 'var(--accent-light)',
                             fontSize: '13px', fontFamily: 'var(--font-ui)',
                             outline: 'none', color: 'var(--text)',
@@ -289,13 +336,17 @@ export default function DataGrid({ columns, rows, globalFilter = '', onCommit, o
   )
 }
 
+/** Texto padrao de uma celula: null/undefined viram vazio. */
+function defaultText(v) {
+  return v == null ? '' : String(v)
+}
+
 /**
- * Ordem de duas celulas: as duas numericas → por numero; senao, por texto.
- * Celula vazia NAO vale 0 (antes `Number('')` misturava vazio aos numeros —
- * analise 261117, U12).
+ * Ordem de dois textos de celula: os dois numericos → por numero; senao, por
+ * texto. Celula vazia NAO vale 0 (antes `Number('')` misturava vazio aos
+ * numeros — analise 261117, U12).
  */
-function compareCells(rowA, rowB, id) {
-  const a = String(rowA.original[id] ?? ''), b = String(rowB.original[id] ?? '')
+function compareText(a, b) {
   const an = a.trim() === '' ? NaN : Number(a), bn = b.trim() === '' ? NaN : Number(b)
   if (!isNaN(an) && !isNaN(bn)) return an - bn
   return a.localeCompare(b)
